@@ -1,4 +1,4 @@
-import { ACTIONS, ACTION_ORDER, DOOR, HANGER, MOOD_TIERS, SAMPLE_NPC, SAMPLE_STORY, SAMPLE_INNER } from './data.js';
+import { ACTIONS, ACTION_ORDER, DOOR, HANGER, MOOD_TIERS, SAMPLE_STORY, SAMPLE_INNER } from './data.js';
 import { buildStoryPrompt, buildMorePrompt, buildInnerPrompt, parseStory, parseInner, DOOR_ORDER as ORDER } from './ooc.js';
 
 const ICONS = {
@@ -84,16 +84,13 @@ function moodTier({ hurt, trust }) {
   return 4;
 }
 
-const ui = { image: null, imageName: '', idx: 0, playing: false, speed: 1, token: 0, ooc: null, draft: null, sample: false };
+const ui = { image: null, imageName: '', idx: 0, seen: 0, playing: false, speed: 1, token: 0, ooc: null, draft: null, sample: false };
 let npc = null;
 let story = null;
 let inner = null;
 
 /* ================= SETUP ================= */
-function readForm() {
-  return { name: $('fName').value.trim(), pcName: $('fPc').value.trim(), incident: $('fIncident').value.trim() };
-}
-function syncPlate() { $('miniPlate').textContent = $('fName').value.trim() || '이름'; }
+function syncPlate() { $('miniPlate').textContent = ui.draft?.npcName || '?'; }
 function syncDrop() {
   const has = Boolean(ui.image);
   $('drop').classList.toggle('filled', has);
@@ -111,9 +108,10 @@ function setStoryStatus(res) {
     $('btnStart').disabled = true;
     return;
   }
-  const last = res.story.turns[res.story.turns.length - 1];
+  const st = res.story;
+  const names = st.npcName ? `${st.npcName}${st.pcName ? ` · ${st.pcName}` : ''}` : '';
   el.className = 'paste-status good';
-  el.innerHTML = `<b>${icon('check')} ${res.story.turns.length}번의 시도를 읽었어요</b><span>마지막 문 상태 · ${DOOR[last.door].ko}${last.door === 'OPEN' ? '' : ' (문이 열리지 않았어요. 재생 후 이어서 받을 수 있어요)'}</span>${res.warnings.map((w) => `<span class="warn">${fmt(w)}</span>`).join('')}`;
+  el.innerHTML = `<b>${icon('check')} 답을 받았어요${names ? ` · ${esc(names)}` : ''}</b><span>어떻게 될지는 문 앞에서 확인해요.</span>${res.warnings.length ? '<span class="warn">읽지 못한 줄은 건너뛰었어요.</span>' : ''}`;
   $('btnStart').disabled = false;
 }
 const fmt = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -124,37 +122,23 @@ function readStoryPaste() {
   const res = parseStory(raw);
   ui.draft = res.ok ? res.story : null;
   setStoryStatus(res);
+  syncPlate();
 }
 
 function buildSetup() {
   syncPlate();
-  $('fName').addEventListener('input', syncPlate);
-  const saved = store.get('npc', null);
-  if (saved) { $('fName').value = saved.name || ''; $('fPc').value = saved.pcName || ''; $('fIncident').value = saved.incident || ''; syncPlate(); }
-
   $('storyCopy').addEventListener('click', async () => {
-    const f = readForm();
-    if (!f.name) { $('fName').focus(); return toast('NPC 이름을 먼저 적어 주세요.'); }
-    const prompt = buildStoryPrompt(f);
+    const prompt = buildStoryPrompt();
     const ok = await copyText(prompt);
     if (!ok) return openPrompt('사과 과정 OOC', prompt);
     $('storyCopyLabel').textContent = '복사됨';
     $('storyCopy').classList.add('done');
     toast('OOC를 복사했어요. AI 채팅에 붙여넣어 보내세요.');
   });
-  $('storyView').addEventListener('click', () => {
-    const f = readForm();
-    if (!f.name) { $('fName').focus(); return toast('NPC 이름을 먼저 적어 주세요.'); }
-    openPrompt('사과 과정 OOC', buildStoryPrompt(f));
-  });
-  ['fName', 'fPc', 'fIncident'].forEach((id) => $(id).addEventListener('input', () => { $('storyCopyLabel').textContent = 'OOC 복사'; $('storyCopy').classList.remove('done'); }));
+  $('storyView').addEventListener('click', () => openPrompt('사과 과정 OOC', buildStoryPrompt()));
   $('storyPaste').addEventListener('input', readStoryPaste);
 
   $('btnSample').addEventListener('click', () => {
-    $('fName').value = SAMPLE_NPC.name;
-    $('fPc').value = SAMPLE_NPC.pcName;
-    $('fIncident').value = '';
-    syncPlate();
     $('storyPaste').value = SAMPLE_STORY;
     readStoryPaste();
     ui.sample = true;
@@ -194,12 +178,10 @@ function buildSetup() {
 }
 
 function begin(autoplay) {
-  const f = readForm();
-  npc = { name: f.name || '그 사람', pcName: f.pcName || 'PC', incident: f.incident };
   story = ui.draft;
+  npc = { name: story.npcName || 'NPC', pcName: story.pcName || 'PC' };
   inner = null;
-  if (!npc.incident && story.incident) npc.incident = story.incident;
-  store.set('npc', { name: f.name, pcName: f.pcName, incident: f.incident });
+  ui.seen = 0;
   hide('setup');
   startSim();
   if (autoplay) setTimeout(() => play(), 500);
@@ -240,15 +222,19 @@ const stateAt = (i) => turnAt(i) || START_STATE;
 const total = () => story.turns.length;
 
 function buildTrack() {
-  $('plTrack').innerHTML = story.turns
+  const seen = story.turns.slice(0, ui.seen);
+  $('plTrack').innerHTML = seen
     .map((t, i) => `<button type="button" class="tick ${DOOR[t.door].tone}" data-i="${i + 1}" title="T${pad(t.n)} · ${ACTIONS[t.action].label}" aria-label="T${pad(t.n)}"><i></i></button>`)
-    .join('');
-  $('plTotal').textContent = `/ ${pad(total())}`;
+    .join('') + (ui.seen < total() ? '<span class="tick unknown" aria-hidden="true">?</span>' : '');
+  $('plTotal').textContent = ui.seen < total() ? '/ ??' : `/ ${pad(total())}`;
+}
+function markSeen(i) {
+  if (i > ui.seen) { ui.seen = i; buildTrack(); }
 }
 
 /** 상태를 i번째 시도 직후로 바로 맞춘다 (애니메이션 없음). */
 function jump(i) {
-  ui.idx = Math.max(0, Math.min(total(), i));
+  ui.idx = Math.max(0, Math.min(ui.seen, i));
   resetDoor();
   const t = turnAt(ui.idx);
   if (t) {
@@ -274,6 +260,7 @@ async function advance(token) {
   const prev = stateAt(i - 1);
   const sp = ui.speed;
   ui.idx = i;
+  markSeen(i);
   renderPlayer();
   renderPc(t, true);
   animateAction(t.action);
@@ -499,7 +486,7 @@ function animateAction(action) {
 /* ================= OOC BAR (속마음 / 이어서) ================= */
 function beginOoc(kind) {
   stop();
-  const prompt = kind === 'inner' ? buildInnerPrompt(npc, story) : buildMorePrompt(npc, story);
+  const prompt = kind === 'inner' ? buildInnerPrompt(story) : buildMorePrompt(story);
   ui.ooc = { kind, prompt, title: kind === 'inner' ? '속마음 OOC' : '이어서 OOC', sub: kind === 'inner' ? `문이 열렸어요 · 총 ${total()}번의 시도` : `T${pad(total() + 1)}부터 이어서 받아요` };
   $('oocTitle').textContent = ui.ooc.title;
   $('oocSub').textContent = `${ui.ooc.sub} · ${prompt.length.toLocaleString()}자`;
@@ -609,7 +596,7 @@ function toast(msg) {
 function openLog() {
   const list = $('logList');
   if (!story || !story.turns.length) { list.innerHTML = '<p class="log-empty">아직 기록이 없어요.</p>'; show('logModal'); return; }
-  const shown = inner ? story.turns : story.turns.slice(0, Math.max(ui.idx, 0));
+  const shown = story.turns.slice(0, Math.max(ui.seen, 0));
   list.innerHTML = shown.length
     ? shown.map((t) => `<div class="log-turn"><span class="h-ic" style="${toneStyle(t.action)}">${icon(ACTIONS[t.action].icon)}</span><div>
         <div class="t"><span>T${pad(t.n)} · ${ACTIONS[t.action].label}</span><span>${DOOR[t.door].label}</span></div>
@@ -625,15 +612,15 @@ function openLog() {
 /* ---------- session ---------- */
 function saveSession() {
   if (!story || !npc) return;
-  store.set('session', { v: 2, npc, story, inner, idx: ui.idx, sample: ui.sample });
+  store.set('session', { v: 3, npc, story, inner, idx: ui.idx, seen: ui.seen, sample: ui.sample });
   syncResume();
 }
 function clearSession() { store.set('session', null); syncResume(); }
 function syncResume() {
   const s = store.get('session', null);
-  const ok = s && s.v === 2 && s.story && s.story.turns?.length;
+  const ok = s && s.v === 3 && s.story && s.story.turns?.length;
   $('resumeBox').hidden = !ok;
-  if (ok) $('resumeText').textContent = `${s.npc.name}의 문 앞 · ${s.story.turns.length}번의 시도${s.inner ? ' · 결과까지' : ''}`;
+  if (ok) $('resumeText').textContent = `${s.npc.name}의 문 앞 · T${pad(s.seen || 0)}까지 봤어요${s.inner ? ' · 결과까지' : ''}`;
 }
 function resumeSession() {
   const s = store.get('session', null);
@@ -642,6 +629,7 @@ function resumeSession() {
   story = s.story;
   inner = s.inner;
   ui.sample = Boolean(s.sample);
+  ui.seen = s.seen || 0;
   hide('setup');
   startSim();
   jump(s.idx || 0);
@@ -704,7 +692,7 @@ function bind() {
   const edit = () => { closeAll(); stop(); show('setup'); };
   const reset = () => {
     closeAll(); stop(); hideOoc(); clearSession();
-    story = null; inner = null; ui.draft = null; ui.sample = false;
+    story = null; inner = null; ui.draft = null; ui.sample = false; ui.seen = 0; syncPlate();
     $('storyPaste').value = ''; setStoryStatus(null);
     show('setup');
   };
@@ -723,7 +711,7 @@ function bind() {
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     if (e.key === 'Home') { e.preventDefault(); stop(); jump(0); }
-    if (e.key === 'End') { e.preventDefault(); stop(); jump(total()); }
+    if (e.key === 'End') { e.preventDefault(); stop(); jump(ui.seen); }
   });
 }
 

@@ -950,3 +950,5 @@ svg.ic { width: 1.2em; height: 1.2em; stroke: currentColor; fill: none; stroke-w
 
 .board > .panel { min-width: 0; }
 .npc-card { min-width: 0; }
+.tick.unknown { flex: 3; display: grid; place-items: center; border-style: dashed; border-color: var(--shadow); background: none; color: var(--muted); font: 400 13px/1 var(--pixel); cursor: default; }
+.tick.unknown:hover { transform: none; }

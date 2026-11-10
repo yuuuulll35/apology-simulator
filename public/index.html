@@ -341,14 +341,14 @@
       <h2 class="sheet-ribbon" id="setupTitle">NEW GAME</h2>
       <aside class="setup-aside">
         <p class="setup-q">누가 문을<br />닫았나요?</p>
-        <p class="setup-desc">두 사람을 정하고 OOC를 AI 채팅에 보내면, 문이 열릴 때까지의 사과 과정이 이 문 앞에서 재생돼요.</p>
+        <p class="setup-desc">OOC를 AI 채팅에 보내고 받은 답을 붙여넣으면, 문이 열릴 때까지의 사과 과정이 이 문 앞에서 재생돼요. 어떻게 끝날지는 재생해 봐야 알아요.</p>
         <label class="drop" id="drop">
           <input type="file" accept="image/*" id="imgInput" hidden />
           <svg class="drop-door" viewBox="0 0 120 170" aria-hidden="true">
             <rect x="4" y="4" width="112" height="166" rx="14" fill="#f3e2c6" stroke="#4a3832" stroke-width="4" />
             <rect x="16" y="16" width="88" height="154" rx="7" class="drop-leaf" stroke="#4a3832" stroke-width="4" />
             <rect x="32" y="26" width="56" height="18" rx="5" fill="#fffaf0" stroke="#4a3832" stroke-width="2.6" />
-            <text x="60" y="39.5" text-anchor="middle" font-size="11" fill="#4a3832" font-family="Jua, sans-serif" id="miniPlate">이름</text>
+            <text x="60" y="39.5" text-anchor="middle" font-size="11" fill="#4a3832" font-family="Jua, sans-serif" id="miniPlate">?</text>
             <rect x="28" y="54" width="64" height="40" rx="6" fill="none" stroke="#4a3832" stroke-width="2.6" opacity=".55" />
             <rect x="28" y="104" width="64" height="54" rx="6" fill="none" stroke="#4a3832" stroke-width="2.6" opacity=".55" />
             <circle cx="90" cy="98" r="5.5" fill="#f0c86e" stroke="#4a3832" stroke-width="2.4" />
@@ -374,30 +374,19 @@
           <button type="button" class="btn small" id="btnResume">이어서 보기</button>
         </div>
 
-        <fieldset class="setup-sec">
-          <legend><b>1</b>두 사람</legend>
-          <div class="grid2">
-            <label class="field"><span>NPC 이름 <em>문을 닫은 사람</em></span><input id="fName" name="name" required maxlength="12" placeholder="하윤" /></label>
-            <label class="field"><span>PC 이름 <em>사과하는 사람</em></span><input id="fPc" name="pcName" maxlength="12" placeholder="도윤" /></label>
-          </div>
-          <label class="field"><span>다툰 이유 <em>비워 두면 AI가 서사 속 가장 그럴듯한 갈등으로 정해요</em></span>
-            <textarea id="fIncident" name="incident" rows="2" maxlength="120" placeholder="기념일 약속을 잊고 친구들과 놀러 갔다"></textarea>
-          </label>
-        </fieldset>
-
         <fieldset class="setup-sec ooc-sec">
-          <legend><b>2</b>AI 채팅에서 사과 과정 받아 오기</legend>
+          <legend><b>1</b>AI 채팅에서 사과 과정 받아 오기</legend>
           <ol class="ooc-steps">
             <li>
               <span class="ooc-num">1</span>
-              <span class="step-txt"><b>OOC 복사</b><em>롤플 중인 AI 채팅에 그대로 붙여넣어 보내요.</em></span>
+              <span class="step-txt"><b>OOC 복사</b><em>롤플 중인 AI 채팅에 그대로 붙여넣어 보내요. 두 사람의 이름과 다툰 이유는 AI가 서사에서 가져와요.</em></span>
               <button type="button" class="btn primary" id="storyCopy"><span data-icon="copy"></span><span id="storyCopyLabel">OOC 복사</span></button>
               <button type="button" class="btn icon-only" id="storyView" title="OOC 내용 보기" aria-label="OOC 내용 보기"><span data-icon="eye"></span></button>
             </li>
             <li class="paste-step">
               <span class="ooc-num">2</span>
-              <span class="step-txt"><b>AI 답 붙여넣기</b><em>받은 답을 통째로 붙여넣어요. 잡담이 섞여도 괜찮아요.</em></span>
-              <textarea id="storyPaste" rows="4" placeholder="T01 | 노크 | … 처럼 시작하는 AI 답을 여기에 붙여넣으세요."></textarea>
+              <span class="step-txt"><b>AI 답 붙여넣기</b><em>받은 답을 통째로 붙여넣어요. 잡담이 섞여도 괜찮아요. 미리 읽지 않고 재생으로 보는 걸 추천해요.</em></span>
+              <textarea id="storyPaste" rows="4" placeholder="AI 답을 여기에 붙여넣으세요."></textarea>
               <div class="paste-status" id="storyStatus"></div>
             </li>
           </ol>

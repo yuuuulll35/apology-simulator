@@ -23,9 +23,10 @@ const clip = (s, n) => {
   return t.length > n ? t.slice(0, n) + '…' : t;
 };
 
-const HEAD = (n, title, npc) => `[OOC ${n} · CLOSED DOOR ${title}] 잠시 역할극 중단. 새로운 에피소드.
+const who = (label, name) => (name ? `${label}(${name})` : label);
+const HEAD = (n, title, story) => `[OOC ${n} · CLOSED DOOR ${title}] 잠시 역할극 중단. 새로운 에피소드.
 조건 : NPC/PC 기존설정, 관계성, 성격, 성향, 말투, 서사, 캐릭터정보, 유저노트, 로어북 종합참고
-상황 : NPC(${npc.name})가 PC(${npc.pcName || 'PC'})와 다툰 뒤 방에 들어가 문을 잠갔다. PC는 닫힌 문 앞에서 사과한다. 두 사람 모두 성인이다.`;
+상황 : ${who('NPC', story?.npcName)}가 ${who('PC', story?.pcName)}와 다툰 뒤 방에 들어가 문을 잠갔다. PC는 닫힌 문 앞에서 사과한다. 두 사람 모두 성인이다.`;
 
 const RULES = `[진행] PC는 기존 설정의 성격대로 사과를 시도하고, NPC는 기존 설정의 성격과 말투로 반응한다. 쉽게 용서하지 않는다. 진정성·구체성·책임 인정·공감은 마음을 열고, 변명·탓·재촉·같은 행동의 반복은 닫는다. 선물과 기다림은 NPC의 성격에 따라 다르게 받아들인다. 문은 한 번에 한 단계까지만 바뀌고 마음이 상하면 되돌아간다(잠김→기댐→해제→열림). 횟수가 아니라 NPC가 납득했을 때 연다.
 행동 : 노크·편지·말·선물·기다림·행동 중 하나
@@ -34,15 +35,15 @@ const RULES = `[진행] PC는 기존 설정의 성격대로 사과를 시도하�
 const TURN_FORMAT = (from) => `T${pad2(from)} | 행동 | PC의 말이나 행동 | NPC 대사(침묵이면 …) | 문 너머 소리나 기척 | 문 상태 | 상처문자 신뢰문자`;
 const pad2 = (n) => String(n).padStart(2, '0');
 
-export function buildStoryPrompt(npc) {
-  const reason = npc.incident ? `다툰 이유 : ${clip(npc.incident, 120)}` : '다툰 이유 : 기존 서사에서 가장 개연성 있는 갈등으로 정한다.';
-  return `${HEAD('1/2', '사과 과정', npc)}
-${reason}
+export function buildStoryPrompt() {
+  return `${HEAD('1/2', '사과 과정')}
+다툰 이유 : 기존 서사에서 가장 개연성 있는 갈등으로 정한다.
 
 ${RULES}
 사과 시도는 6~10번이고, 마지막 시도에서 문이 열린다.
 
 [출력] 역할극 서술 없이 코드블록 하나에 아래 형식으로만 쓴다. 속마음과 숫자는 쓰지 않는다. 칸마다 80자 이내.
+이름 | NPC 이름 | PC 이름
 사건 | 다툰 이유 한 문장
 말투 | 반말 또는 존댓말
 시작 | 문을 닫으며 NPC가 한 말
@@ -55,11 +56,11 @@ const summary = (turns, max = 12) => {
   return lines.length > max ? [...lines.slice(0, 3), `… (${lines.length - max + 3}번 생략)`, ...lines.slice(-(max - 4))].join('\n') : lines.join('\n');
 };
 
-export function buildMorePrompt(npc, story) {
+export function buildMorePrompt(story) {
   const last = story.turns[story.turns.length - 1];
   const next = last.n + 1;
-  return `${HEAD('+', '이어서', npc)}
-다툰 이유 : ${clip(story.incident || npc.incident || '앞서 정한 갈등', 120)}
+  return `${HEAD('+', '이어서', story)}
+다툰 이유 : ${clip(story.incident || '앞서 정한 갈등', 120)}
 앞서 출력한 사과 과정이 T${pad2(last.n)}에서 끝났지만 문은 아직 ${DOOR_KO[last.door]} 상태다. 마지막 마음 ${CODE[Math.floor(last.hurt / 10)]} ${CODE[Math.floor(last.trust / 10)]}.
 ${summary(story.turns, 8)}
 
@@ -70,10 +71,10 @@ T${pad2(next)}부터 이어서 최대 6번 더 시도하고, NPC가 납득하면
 ${TURN_FORMAT(next)}`;
 }
 
-export function buildInnerPrompt(npc, story) {
+export function buildInnerPrompt(story) {
   const n = story.turns.length;
-  return `${HEAD('2/2', '속마음', npc)}
-다툰 이유 : ${clip(story.incident || npc.incident || '앞서 정한 갈등', 120)}
+  return `${HEAD('2/2', '속마음', story)}
+다툰 이유 : ${clip(story.incident || '앞서 정한 갈등', 120)}
 앞서 출력한 사과 과정 끝에 NPC가 문을 열었다. 총 ${n}번의 시도.
 ${summary(story.turns)}
 
@@ -91,6 +92,7 @@ T01 | 그 시도 때 NPC의 속마음 (1인칭)
 
 /* ---------- parsing ---------- */
 const KEYS = {
+  names: ['이름', '등장인물', '인물'],
   case: ['사건', '다툰이유', '갈등'],
   speech: ['말투'],
   start: ['시작', '첫마디', '처음'],
@@ -143,7 +145,7 @@ const silent = (s) => (/^[.…\s]*$|^\(?침묵\)?$|^-$/.test(s) ? '' : s);
 
 /** 사과 과정(또는 이어서) 답. prev가 있으면 마지막 상태에서 이어 읽는다. */
 export function parseStory(text, prev = null) {
-  const story = prev ? { ...prev, turns: [...prev.turns] } : { incident: '', speech: 'casual', start: '', turns: [] };
+  const story = prev ? { ...prev, turns: [...prev.turns] } : { npcName: '', pcName: '', incident: '', speech: 'casual', start: '', turns: [] };
   const errors = [];
   const added = [];
   let state = prev?.turns.length ? prev.turns[prev.turns.length - 1] : { door: 'CLOSED', hurt: 75, trust: 35 };
@@ -176,6 +178,7 @@ export function parseStory(text, prev = null) {
     if (!m) continue;
     const key = KEY_INDEX.find(([a]) => a === norm(m[1]))?.[1];
     const val = unquote(m[2]);
+    if (key === 'names') { const p = split(m[2]).map(unquote); if (p[0]) story.npcName = clip(p[0].replace(/^NPC\s*[:：]?\s*/i, ''), 12); if (p[1]) story.pcName = clip(p[1].replace(/^PC\s*[:：]?\s*/i, ''), 12); }
     if (key === 'case') story.incident = clip(val, 120);
     if (key === 'speech') story.speech = /존댓|존대|formal/.test(val) ? 'formal' : 'casual';
     if (key === 'start') story.start = silent(clip(val, 160));

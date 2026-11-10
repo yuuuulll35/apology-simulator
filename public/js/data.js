@@ -22,9 +22,8 @@ export const HANGER = {
   formal: { CLOSED: '혼자 있을게요', AJAR: '듣고 있어요', UNLOCKED: '잠시만요', OPEN: '' },
 };
 
-export const SAMPLE_NPC = { name: '하윤', pcName: '도윤', incident: '' };
-
 export const SAMPLE_STORY = `\`\`\`
+이름 | 하윤 | 도윤
 사건 | 기념일 저녁 약속을 잊고 친구들과 늦게까지 있다가 연락도 하지 않았다
 말투 | 반말
 시작 | 오늘은 말 걸지 마. 진짜로.
