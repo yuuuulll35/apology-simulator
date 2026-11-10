@@ -1,126 +1,131 @@
-// OOC 모드: 턴마다 복사할 OOC를 만들고, AI 답변을 읽는다.
-// - 롤플 채팅 입력창 제한에 맞춰 조각마다 1,500자 이하, 혼자서 완결
-// - 마음 수치는 문자로 숨겨 채팅에 결과가 드러나지 않게 한다
-// - 속마음은 턴마다 받지 않고, 문이 열린 뒤 결과 OOC에서 한 번에 받는다
+// OOC: 사과 과정 한 번(+필요하면 이어서), 속마음·결과 한 번.
+// - 롤플 채팅 입력창 제한에 맞춰 조각마다 1,500자 이하
+// - 마음 수치는 문자로 숨기고, 속마음은 문이 열린 뒤에만 받는다
 
 export const INPUT_LIMIT = 1500;
-export const TEXT_LIMIT = 400;
-
+export const DOOR_ORDER = ['CLOSED', 'AJAR', 'UNLOCKED', 'OPEN'];
+const DOOR_KO = { CLOSED: '잠김', AJAR: '기댐', UNLOCKED: '해제', OPEN: '열림' };
 const CODE = 'ZKFRMTHBXV';
 const TABLE = [...CODE].map((c, i) => `${i}=${c}`).join(' ');
-const DOOR_KO = { CLOSED: '잠김', AJAR: '기댐', UNLOCKED: '해제', OPEN: '열림' };
-const DOOR_ORDER = ['CLOSED', 'AJAR', 'UNLOCKED', 'OPEN'];
 
-const levelToCode = (v) => CODE[Math.max(0, Math.min(9, Math.floor(v / 10)))];
+const ACTION_WORDS = [
+  ['knock', /노크|두드/],
+  ['letter', /편지|쪽지|메모/],
+  ['gift', /선물|두고|놓고/],
+  ['wait', /기다|침묵|머무|앉아/],
+  ['talk', /말|대화|대사|부르/],
+  ['act', /행동|기타/],
+];
+const ACTION_KO = { knock: '노크', letter: '편지', talk: '말', gift: '선물', wait: '기다림', act: '행동' };
+
 const clip = (s, n) => {
   const t = String(s || '').replace(/\s+/g, ' ').trim();
   return t.length > n ? t.slice(0, n) + '…' : t;
 };
 
-const HEAD = (title, npc) => `[OOC · CLOSED DOOR ${title}] 잠시 역할극 중단. 새로운 에피소드.
+const HEAD = (n, title, npc) => `[OOC ${n} · CLOSED DOOR ${title}] 잠시 역할극 중단. 새로운 에피소드.
 조건 : NPC/PC 기존설정, 관계성, 성격, 성향, 말투, 서사, 캐릭터정보, 유저노트, 로어북 종합참고
-상황 : NPC(${npc.name})가 PC(${npc.pcName || 'PC'})와 다툰 뒤 방에 들어가 문을 잠갔다. PC는 문밖에서 사과한다. NPC는 성인이다.`;
+상황 : NPC(${npc.name})가 PC(${npc.pcName || 'PC'})와 다툰 뒤 방에 들어가 문을 잠갔다. PC는 닫힌 문 앞에서 사과한다. 두 사람 모두 성인이다.`;
 
-function incidentLine(npc, first) {
-  if (npc.incident) return `다툰 이유 : ${clip(npc.incident, 120)}`;
-  return first ? '다툰 이유 : 기존 서사에서 가장 개연성 있는 갈등으로 정한다.' : '다툰 이유 : 첫 턴에 정한 갈등을 유지한다.';
+const RULES = `[진행] PC는 기존 설정의 성격대로 사과를 시도하고, NPC는 기존 설정의 성격과 말투로 반응한다. 쉽게 용서하지 않는다. 진정성·구체성·책임 인정·공감은 마음을 열고, 변명·탓·재촉·같은 행동의 반복은 닫는다. 선물과 기다림은 NPC의 성격에 따라 다르게 받아들인다. 문은 한 번에 한 단계까지만 바뀌고 마음이 상하면 되돌아간다(잠김→기댐→해제→열림). 횟수가 아니라 NPC가 납득했을 때 연다.
+행동 : 노크·편지·말·선물·기다림·행동 중 하나
+마음 : 그 시도 직후 NPC의 상처(남은 화·서운함)와 신뢰(다시 믿고 싶은 마음)를 0~9로 판정해 숫자 대신 문자로만 쓴다. ${TABLE}`;
+
+const TURN_FORMAT = (from) => `T${pad2(from)} | 행동 | PC의 말이나 행동 | NPC 대사(침묵이면 …) | 문 너머 소리나 기척 | 문 상태 | 상처문자 신뢰문자`;
+const pad2 = (n) => String(n).padStart(2, '0');
+
+export function buildStoryPrompt(npc) {
+  const reason = npc.incident ? `다툰 이유 : ${clip(npc.incident, 120)}` : '다툰 이유 : 기존 서사에서 가장 개연성 있는 갈등으로 정한다.';
+  return `${HEAD('1/2', '사과 과정', npc)}
+${reason}
+
+${RULES}
+사과 시도는 6~10번이고, 마지막 시도에서 문이 열린다.
+
+[출력] 역할극 서술 없이 코드블록 하나에 아래 형식으로만 쓴다. 속마음과 숫자는 쓰지 않는다. 칸마다 80자 이내.
+사건 | 다툰 이유 한 문장
+말투 | 반말 또는 존댓말
+시작 | 문을 닫으며 NPC가 한 말
+${TURN_FORMAT(1)}
+(T02, T03 … 같은 형식으로 문이 열릴 때까지 한 시도 한 줄)`;
 }
 
-function historyLines(history) {
-  if (!history.length) return '지난 턴 : 없음 (첫 턴)';
-  const recent = history.slice(-5);
-  const lines = recent.map((h) => `${h.turn}턴 ${h.actionLabel}${h.text ? ` "${clip(h.text, 22)}"` : ''} → ${h.npcLine ? `"${clip(h.npcLine, 18)}"` : '침묵'} (문 ${DOOR_KO[h.door]})`);
-  const skipped = history.length - recent.length;
-  return `지난 턴${skipped ? ` (앞의 ${skipped}턴 생략)` : ''} :\n${lines.join('\n')}`;
+const summary = (turns, max = 12) => {
+  const lines = turns.map((t) => `T${pad2(t.n)} ${ACTION_KO[t.action]}${t.pc ? ` "${clip(t.pc, 14)}"` : ''} → ${DOOR_KO[t.door]}`);
+  return lines.length > max ? [...lines.slice(0, 3), `… (${lines.length - max + 3}번 생략)`, ...lines.slice(-(max - 4))].join('\n') : lines.join('\n');
+};
+
+export function buildMorePrompt(npc, story) {
+  const last = story.turns[story.turns.length - 1];
+  const next = last.n + 1;
+  return `${HEAD('+', '이어서', npc)}
+다툰 이유 : ${clip(story.incident || npc.incident || '앞서 정한 갈등', 120)}
+앞서 출력한 사과 과정이 T${pad2(last.n)}에서 끝났지만 문은 아직 ${DOOR_KO[last.door]} 상태다. 마지막 마음 ${CODE[Math.floor(last.hurt / 10)]} ${CODE[Math.floor(last.trust / 10)]}.
+${summary(story.turns, 8)}
+
+${RULES}
+T${pad2(next)}부터 이어서 최대 6번 더 시도하고, NPC가 납득하면 문을 연다.
+
+[출력] 역할극 서술 없이 코드블록 하나에 아래 형식으로만 쓴다. 속마음과 숫자는 쓰지 않는다. 칸마다 80자 이내.
+${TURN_FORMAT(next)}`;
 }
 
-export function buildTurnPrompt({ npc, history, state, action }) {
-  const turn = history.length + 1;
-  const first = turn === 1;
-  const said = action.text ? `\nPC가 ${action.type === 'act' ? '한 행동' : action.type === 'letter' ? '쓴 편지' : '한 말'} : "${clip(action.text, TEXT_LIMIT)}"` : '';
-  const caseLine = first && !npc.incident ? '\n사건 | 다툰 이유 한 문장' : '';
-  return `${HEAD(`${turn}턴`, npc)}
-${incidentLine(npc, first)}
-${historyLines(history)}
-현재 문 : ${DOOR_KO[state.door]} / 직전 마음 : ${levelToCode(state.hurt)} ${levelToCode(state.trust)}
+export function buildInnerPrompt(npc, story) {
+  const n = story.turns.length;
+  return `${HEAD('2/2', '속마음', npc)}
+다툰 이유 : ${clip(story.incident || npc.incident || '앞서 정한 갈등', 120)}
+앞서 출력한 사과 과정 끝에 NPC가 문을 열었다. 총 ${n}번의 시도.
+${summary(story.turns)}
 
-[이번 PC 행동] ${action.label}${said}
+[판정] 각 시도에서 NPC가 겉으로 한 말이 아니라 그때의 진짜 속마음을 쓴다. 근거 없는 미화는 금지한다. 화해 결과는 완전한 화해·조건부 화해·어색한 화해 중 NPC의 실제 마음에 가장 가까운 것을 고른다.
 
-[판정] NPC의 성격·말투로 이번 행동 하나에만 반응한다. 쉽게 용서하지 않는다. 진정성·구체성·책임 인정·공감은 마음을 열고, 변명·탓·재촉·같은 행동 반복은 닫는다. 선물과 기다림은 성격에 따라 다르게 받아들인다. 문은 한 턴에 한 단계까지만 바뀌며 마음이 상하면 되돌아간다(잠김→기댐→해제→열림). 횟수가 아니라 NPC가 납득했을 때만 연다.
-마음은 상처(남은 화·서운함)와 신뢰(다시 믿고 싶은 마음)를 0~9로 판정해 숫자 대신 문자로만 쓴다. ${TABLE}
-
-[출력] 역할극 서술 없이 코드블록 하나에 아래 줄만 쓴다. PC의 대사·감정·행동은 쓰지 않는다. 숫자와 속마음은 쓰지 않는다.
-대사 | NPC가 문 너머에서 하는 말 1~2문장 (침묵이면 …)
-소리 | 문 너머에서 들리는 소리나 기척 한 문장
-문 | 잠김·기댐·해제·열림 중 하나
-마음 | 상처문자 신뢰문자${caseLine}`;
-}
-
-export function buildResultPrompt({ npc, history }) {
-  const lines = history.map((h) => `${h.turn}턴 ${h.actionLabel}${h.text ? ` "${clip(h.text, 16)}"` : ''} → 문 ${DOOR_KO[h.door]}`);
-  const shown = lines.length > 14 ? [...lines.slice(0, 4), `… (${lines.length - 10}턴 생략)`, ...lines.slice(-6)] : lines;
-  return `${HEAD('결과', npc)}
-${npc.incident ? `다툰 이유 : ${clip(npc.incident, 120)}` : '다툰 이유 : 앞서 정한 갈등.'}
-NPC가 방금 문을 열었다. 총 ${history.length}번의 사과 시도가 있었다.
-${shown.join('\n')}
-
-[판정] 사과 과정 전체를 NPC 시점에서 돌아본다. 겉으로 한 말이 아니라 그때의 진짜 속마음을 쓴다. 근거 없는 미화는 금지한다. 화해 결과는 완전한 화해·조건부 화해·어색한 화해 중 NPC의 실제 마음에 가장 가까운 것을 고른다.
-
-[출력] 역할극 서술 없이 코드블록 하나에 아래 줄만 쓴다. PC의 대사·감정·행동은 쓰지 않는다. 각 줄 100자 이내.
+[출력] 역할극 서술 없이 코드블록 하나에 아래 줄만 쓴다. PC의 감정은 쓰지 않는다. 줄마다 80자 이내.
+T01 | 그 시도 때 NPC의 속마음 (1인칭)
+(T${pad2(n)}까지 모든 시도)
 감정 | 최종 감정 상태 (짧은 구)
-계기 | 문을 열기로 결심한 결정적 계기 (몇 턴의 어떤 행동이었는지 포함)
-변화 | 처음 문을 잠갔을 때의 속마음
-변화 | 사과를 들으며 흔들리던 속마음
-변화 | 마음이 기운 순간의 속마음
+계기 | 문을 열기로 결심한 결정적 계기 (몇 번째 시도인지 포함)
 직전 | 문을 열기 직전의 생각 (1인칭 독백)
 한마디 | PC에게 하고 싶은 말 (NPC 말투)
 화해 | 완전한 화해·조건부 화해·어색한 화해 중 하나 | 그 이유 한 문장`;
 }
 
 /* ---------- parsing ---------- */
-const KEY_ALIASES = {
-  line: ['대사', '말', 'npc', '대답'],
-  sound: ['소리', '기척', '묘사', '나레이션', '서술'],
-  door: ['문', '문상태', '문 상태', 'door'],
-  mind: ['마음', '코드', '마음코드', '마음 코드'],
-  case: ['사건', '다툰이유', '다툰 이유', '갈등'],
-  emotion: ['감정', '최종감정', '최종 감정'],
-  trigger: ['계기', '결정적계기', '결정적 계기'],
-  change: ['변화', '내면', '내면변화', '속마음'],
-  last: ['직전', '열기직전', '문을 열기 직전'],
-  message: ['한마디', '하고싶은말', '하고 싶은 말', '말하고싶은것'],
-  ending: ['화해', '화해결과', '화해 결과', '결과'],
+const KEYS = {
+  case: ['사건', '다툰이유', '갈등'],
+  speech: ['말투'],
+  start: ['시작', '첫마디', '처음'],
+  emotion: ['감정', '최종감정'],
+  trigger: ['계기', '결정적계기'],
+  last: ['직전', '열기직전'],
+  message: ['한마디', '하고싶은말'],
+  ending: ['화해', '화해결과', '결과'],
 };
 const norm = (s) => s.replace(/[\s*_`#>\-•·:：\[\]【】]/g, '').toLowerCase();
-const KEY_INDEX = Object.entries(KEY_ALIASES).flatMap(([k, list]) => list.map((a) => [norm(a), k])).sort((a, b) => b[0].length - a[0].length);
+const KEY_INDEX = Object.entries(KEYS).flatMap(([k, list]) => list.map((a) => [norm(a), k]));
+const unquote = (s) => String(s || '').replace(/^[*_\s"“'「『(]+|[*_\s"”'」』)]+$/g, '').trim();
 
-function rows(text) {
-  const out = [];
-  for (const raw of String(text || '').split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || /^```/.test(line)) continue;
-    const m = line.match(/^(.{1,16}?)\s*[|｜:：]\s*(.*)$/);
-    if (!m) continue;
-    const head = norm(m[1]);
-    const hit = KEY_INDEX.find(([a]) => head === a);
-    if (!hit) continue;
-    const value = m[2].replace(/^[*_\s]+|[*_\s]+$/g, '').trim();
-    out.push({ key: hit[1], value, parts: value.split(/\s*[|｜]\s*/).map((p) => p.trim()) });
-  }
-  return out;
+function lines(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((raw, i) => ({ no: i + 1, line: raw.trim() }))
+    .filter((l) => l.line && !/^```/.test(l.line));
 }
-
-const unquote = (s) => s.replace(/^["“'「『]+|["”'」』]+$/g, '').trim();
+const split = (s) => s.split(/\s*[|｜]\s*/).map((p) => p.trim());
+const turnHead = (line) => line.match(/^[*_\s]*T\s*0*(\d{1,2})[*_\s]*[|｜:：]\s*(.*)$/i);
 
 function parseDoor(v) {
-  const s = v.replace(/\s/g, '').toLowerCase();
-  if (/열림|열었|open(?!.*un)|^opened/.test(s)) return 'OPEN';
-  if (/해제|풀림|unlock/.test(s)) return 'UNLOCKED';
+  const s = String(v || '').replace(/\s/g, '').toLowerCase();
+  if (/열림|열었|열린|^open/.test(s)) return 'OPEN';
+  if (/해제|풀림|풀었|unlock/.test(s)) return 'UNLOCKED';
   if (/기댐|기대|살짝|틈|듣|ajar/.test(s)) return 'AJAR';
-  if (/잠김|잠금|닫힘|closed|locked/.test(s)) return 'CLOSED';
+  if (/잠김|잠금|잠겨|닫힘|closed|locked/.test(s)) return 'CLOSED';
   return null;
 }
-
+function parseAction(v) {
+  const s = String(v || '');
+  for (const [k, re] of ACTION_WORDS) if (re.test(s)) return k;
+  return null;
+}
 function parseLevel(ch) {
   if (!ch) return null;
   const c = ch.toUpperCase();
@@ -129,76 +134,83 @@ function parseLevel(ch) {
   if (/^[0-9]$/.test(c)) return Number(c) * 10 + 5;
   return null;
 }
+function parseMind(v) {
+  const tokens = String(v || '').replace(/[^A-Za-z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const flat = tokens.length === 1 && tokens[0].length === 2 ? [...tokens[0]] : tokens;
+  return [parseLevel(flat[0]), parseLevel(flat[1])];
+}
+const silent = (s) => (/^[.…\s]*$|^\(?침묵\)?$|^-$/.test(s) ? '' : s);
 
-export function parseTurn(text, state) {
-  const r = rows(text);
-  const get = (k) => r.find((x) => x.key === k);
+/** 사과 과정(또는 이어서) 답. prev가 있으면 마지막 상태에서 이어 읽는다. */
+export function parseStory(text, prev = null) {
+  const story = prev ? { ...prev, turns: [...prev.turns] } : { incident: '', speech: 'casual', start: '', turns: [] };
   const errors = [];
-  const lineRow = get('line');
-  const doorRow = get('door');
-  const mindRow = get('mind');
-  if (!lineRow && !get('sound')) errors.push('`대사 |` 줄을 찾지 못했어요.');
-  const door = doorRow ? parseDoor(doorRow.value) : null;
-  if (!doorRow) errors.push('`문 |` 줄을 찾지 못했어요.');
-  else if (!door) errors.push(`문 상태 "${doorRow.value}"를 읽지 못했어요. 잠김·기댐·해제·열림 중 하나여야 해요.`);
-  let hurt = state.hurt;
-  let trust = state.trust;
-  if (mindRow) {
-    const letters = mindRow.value.replace(/[^A-Za-z0-9]/g, ' ').trim().split(/\s+/).filter(Boolean);
-    const flat = letters.length === 1 && letters[0].length === 2 ? [...letters[0]] : letters;
-    const h = parseLevel(flat[0]);
-    const t = parseLevel(flat[1]);
-    if (h != null) hurt = h;
-    if (t != null) trust = t;
+  const added = [];
+  let state = prev?.turns.length ? prev.turns[prev.turns.length - 1] : { door: 'CLOSED', hurt: 75, trust: 35 };
+  for (const { no, line } of lines(text)) {
+    const t = turnHead(line);
+    if (t) {
+      const n = Number(t[1]);
+      const p = split(t[2]);
+      if (p.length < 5) { errors.push(`${no}번째 줄(T${pad2(n)}): 칸이 ${p.length}개뿐이에요. 행동 | PC | NPC 대사 | 소리 | 문 | 마음 순서로 6칸이 필요해요.`); continue; }
+      const action = parseAction(p[0]) || 'act';
+      let door = null;
+      let doorIdx = -1;
+      for (let i = p.length - 1; i >= 2; i--) { const d = parseDoor(p[i]); if (d && p[i].length <= 8) { door = d; doorIdx = i; break; } }
+      if (!door) { errors.push(`${no}번째 줄(T${pad2(n)}): 문 상태를 찾지 못했어요. 잠김·기댐·해제·열림 중 하나를 써 주세요.`); continue; }
+      const [h, tr] = doorIdx + 1 < p.length ? parseMind(p[doorIdx + 1]) : [null, null];
+      const pc = unquote(p[1]);
+      const npcLine = silent(unquote(p[2] || ''));
+      const sound = doorIdx > 3 ? unquote(p[3]) : '';
+      const a = DOOR_ORDER.indexOf(state.door);
+      let b = DOOR_ORDER.indexOf(door);
+      if (b - a > 2) b = a + 2;
+      const turn = { n, action, pc: clip(pc === '-' ? '' : pc, 160), npc: clip(npcLine, 200), sound: clip(sound, 140), door: DOOR_ORDER[b], hurt: h ?? state.hurt, trust: tr ?? state.trust };
+      const existing = story.turns.findIndex((x) => x.n === n);
+      if (existing >= 0) story.turns[existing] = turn; else story.turns.push(turn);
+      added.push(turn);
+      state = turn;
+      continue;
+    }
+    const m = line.match(/^(.{1,12}?)\s*[|｜:：]\s*(.*)$/);
+    if (!m) continue;
+    const key = KEY_INDEX.find(([a]) => a === norm(m[1]))?.[1];
+    const val = unquote(m[2]);
+    if (key === 'case') story.incident = clip(val, 120);
+    if (key === 'speech') story.speech = /존댓|존대|formal/.test(val) ? 'formal' : 'casual';
+    if (key === 'start') story.start = silent(clip(val, 160));
   }
-  if (errors.length) return { ok: false, errors };
-
-  let line = unquote(lineRow?.value || '');
-  if (/^[.…\s]*$|^\(?침묵\)?$/.test(line)) line = '';
-  const a = DOOR_ORDER.indexOf(state.door);
-  let b = DOOR_ORDER.indexOf(door);
-  if (b - a > 2) b = a + 2;
-  return {
-    ok: true,
-    out: {
-      npcLine: clip(line, 240),
-      narration: clip(unquote(get('sound')?.value || ''), 160),
-      thought: '',
-      door: DOOR_ORDER[b],
-      hurt,
-      trust,
-      incident: get('case') ? clip(unquote(get('case').value), 120) : '',
-    },
-  };
+  story.turns.sort((x, y) => x.n - y.n);
+  if (!added.length && !errors.length) errors.push('`T01 | …` 처럼 시도마다 한 줄씩 쓴 부분을 찾지 못했어요.');
+  if (errors.length && !added.length) return { ok: false, errors };
+  return { ok: true, story, added: added.length, warnings: errors };
 }
 
-export function parseResult(text) {
-  const r = rows(text);
-  const get = (k) => r.find((x) => x.key === k)?.value || '';
-  const changes = r.filter((x) => x.key === 'change').map((x) => unquote(x.value)).filter(Boolean);
-  const endRow = r.find((x) => x.key === 'ending');
-  const errors = [];
-  if (!get('emotion') && !get('trigger') && !get('message')) errors.push('`감정 |`, `계기 |`, `한마디 |` 같은 줄을 찾지 못했어요.');
-  if (errors.length) return { ok: false, errors };
-  let type = '조건부 화해';
-  let note = '';
-  if (endRow) {
-    const t = endRow.parts[0].replace(/\s/g, '');
-    if (/완전/.test(t)) type = '완전한 화해';
-    else if (/어색/.test(t)) type = '어색한 화해';
-    else if (/조건/.test(t)) type = '조건부 화해';
-    note = unquote(endRow.parts.slice(1).join(' ') || '');
+export function parseInner(text, story) {
+  const thoughts = {};
+  const res = { final_emotion: '', decisive_moment: '', last_thought: '', message_to_pc: '', reconciliation_type: '조건부 화해', reconciliation_note: '' };
+  let hit = 0;
+  for (const { line } of lines(text)) {
+    const t = turnHead(line);
+    if (t) { thoughts[Number(t[1])] = clip(unquote(split(t[2])[0]), 160); hit++; continue; }
+    const m = line.match(/^(.{1,12}?)\s*[|｜:：]\s*(.*)$/);
+    if (!m) continue;
+    const key = KEY_INDEX.find(([a]) => a === norm(m[1]))?.[1];
+    const parts = split(m[2]);
+    const val = unquote(m[2]);
+    if (key === 'emotion') { res.final_emotion = val; hit++; }
+    if (key === 'trigger') { res.decisive_moment = val; hit++; }
+    if (key === 'last') { res.last_thought = val; hit++; }
+    if (key === 'message') { res.message_to_pc = val; hit++; }
+    if (key === 'ending') {
+      const kind = parts[0].replace(/\s/g, '');
+      res.reconciliation_type = /완전/.test(kind) ? '완전한 화해' : /어색/.test(kind) ? '어색한 화해' : '조건부 화해';
+      res.reconciliation_note = unquote(parts.slice(1).join(' '));
+      hit++;
+    }
   }
-  return {
-    ok: true,
-    result: {
-      final_emotion: unquote(get('emotion')) || '-',
-      decisive_moment: unquote(get('trigger')) || '-',
-      inner_journey: changes,
-      last_thought: unquote(get('last')) || '…',
-      message_to_pc: unquote(get('message')) || '…',
-      reconciliation_type: type,
-      reconciliation_note: note,
-    },
-  };
+  if (!hit) return { ok: false, errors: ['`T01 | 속마음`, `감정 |`, `한마디 |` 같은 줄을 찾지 못했어요.'] };
+  res.thoughts = thoughts;
+  res.inner_journey = story.turns.filter((t) => thoughts[t.n]).map((t) => ({ n: t.n, action: t.action, text: thoughts[t.n] }));
+  return { ok: true, result: res };
 }

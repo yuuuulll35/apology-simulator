@@ -2,10 +2,8 @@
   "name": "one-more-knock",
   "version": "1.0.0",
   "description": "CLOSED DOOR — 닫힌 문 너머의 NPC에게 사과하는 인터랙티브 사과 시뮬레이터",
-  "main": "server.js",
   "scripts": {
-    "start": "node --env-file-if-exists=.env server.js",
-    "dev": "node --watch --env-file-if-exists=.env server.js"
+    "start": "cd public && python3 -m http.server 8000"
   },
   "repository": {
     "type": "git",
@@ -15,12 +13,6 @@
     "url": "https://github.com/yuuuulll35/apology-simulator/issues"
   },
   "homepage": "https://github.com/yuuuulll35/apology-simulator#readme",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^1.7.0"
-  },
   "type": "module",
-  "private": true,
-  "engines": {
-    "node": ">=22"
-  }
+  "private": true
 }
