@@ -67,5 +67,7 @@ public/js/data.js  성격별 대사, 문 너머 묘사, 속마음, 엔딩 문구
 ## 사용한 리소스
 
 - 폰트: [Pretendard](https://github.com/orioncactus/pretendard) © Kil Hyung-jin, SIL Open Font License 1.1
+- 폰트: [Jua](https://fonts.google.com/specimen/Jua) © Woowahan Brothers, SIL Open Font License 1.1 (제목, 버튼)
+- 폰트: [Galmuri11](https://github.com/quiple/galmuri) © Lee Minseo, SIL Open Font License 1.1 (HUD 라벨, `public/assets/fonts`에 포함)
 - 폰트: [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum) © Yanghee Ryu, SIL Open Font License 1.1 (NPC 대사)
 - 아이콘: [Lucide](https://lucide.dev) 아이콘을 기반으로 한 인라인 SVG, ISC License

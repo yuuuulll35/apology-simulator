@@ -183,6 +183,6 @@ export const MESSAGES = {
 };
 
 export const HANGER = {
-  casual: { CLOSED: '들어오지 마', AJAR: '듣고만 있음', UNLOCKED: '...', OPEN: '' },
-  formal: { CLOSED: '혼자 있을게요', AJAR: '듣고 있어요', UNLOCKED: '...', OPEN: '' },
+  casual: { CLOSED: '들어오지 마', AJAR: '듣고만 있음', UNLOCKED: '잠깐만', OPEN: '' },
+  formal: { CLOSED: '혼자 있을게요', AJAR: '듣고 있어요', UNLOCKED: '잠시만요', OPEN: '' },
 };

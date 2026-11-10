@@ -22,6 +22,10 @@ const ICONS = {
   trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
   key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
   wave: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  ear: '<path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"/><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"/>',
+  eyeoff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
   door: '<path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h3M13 20h9M10 12v.01"/><path d="M13 4.56v16.16a.5.5 0 0 1-.68.46l-6.32-2.5A1.5 1.5 0 0 1 5 17.29V5.79a2 2 0 0 1 1.32-1.88l5-1.79A1 1 0 0 1 13 3.18z"/>',
 };
 const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -29,17 +33,17 @@ const paintIcons = (root = document) => root.querySelectorAll('[data-icon]').for
 
 const FACE_COLORS = { angry: '#f4dcd7', sulky: '#f6e3d4', aside: '#f6ebcf', soft: '#e3eadc', happy: '#e3eadc', sad: '#e1ebf0' };
 function face(expr) {
-  const eyes = '<circle cx="17" cy="23" r="2.6" fill="#3a312b"/><circle cx="31" cy="23" r="2.6" fill="#3a312b"/>';
+  const eyes = '<circle cx="17" cy="23" r="2.6" fill="#4a3832"/><circle cx="31" cy="23" r="2.6" fill="#4a3832"/>';
   const blush = '<ellipse cx="12.5" cy="30" rx="3.6" ry="2.1" fill="#d48f86" opacity=".38"/><ellipse cx="35.5" cy="30" rx="3.6" ry="2.1" fill="#d48f86" opacity=".38"/>';
   const parts = {
     angry: `${eyes}<path d="M11 15.5 20 18.5M37 15.5 28 18.5M17 34q7-6 14 0"/>`,
     sulky: `${eyes}<path d="M12 17.5h8M28 17.5h8M18.5 33q5.5-2.4 11 0"/>`,
-    aside: '<circle cx="19.5" cy="23" r="2.4" fill="#3a312b"/><circle cx="33" cy="23" r="2.4" fill="#3a312b"/><path d="M20 32.5h8.5"/>',
+    aside: '<circle cx="19.5" cy="23" r="2.4" fill="#4a3832"/><circle cx="33" cy="23" r="2.4" fill="#4a3832"/><path d="M20 32.5h8.5"/>',
     soft: `${eyes}${blush}<path d="M18 31q6 4.5 12 0"/>`,
     happy: `${blush}<path d="M13.5 24q3.5-4.5 7 0M27.5 24q3.5-4.5 7 0M17 30q7 8 14 0"/>`,
     sad: `${eyes}<path d="M12 18.5 20 16M36 18.5 28 16M18.5 34q5.5-3.6 11 0"/><path d="M33.5 27.5q-2.2 3.4 0 4.6 2.2-1.2 0-4.6z" fill="#a9c2cf" stroke="none"/>`,
   };
-  return `<svg viewBox="0 0 48 48" fill="none" stroke="#3a312b" stroke-width="2.2" stroke-linecap="round"><circle class="face-bg" cx="24" cy="24" r="22" fill="${FACE_COLORS[expr]}" stroke="none"/>${parts[expr]}</svg>`;
+  return `<svg viewBox="0 0 48 48" fill="none" stroke="#4a3832" stroke-width="2.6" stroke-linecap="round"><circle class="face-bg" cx="24" cy="24" r="21.5" fill="${FACE_COLORS[expr]}" stroke="#4a3832" stroke-width="2.6"/>${parts[expr]}</svg>`;
 }
 const TIER_FACE = ['angry', 'sulky', 'aside', 'soft', 'happy'];
 const PERS_FACE = { tsun: 'sulky', quiet: 'aside', fiery: 'angry', gentle: 'sad' };
@@ -48,7 +52,12 @@ const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = (n) => String(n).padStart(2, '0');
-const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+const replay = (el, cls) => { el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls); };
+const setCls = (el, cls) => el.setAttribute('class', cls);
+const svgShow = (el, on) => el.classList.toggle('is-hidden', !on);
+const HEART_OUTLINE = '<rect x="-1" y="1" width="1" height="1"/><rect x="-1" y="2" width="1" height="1"/><rect x="0" y="0" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="1" y="-1" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="-1" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="-1" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="-1" width="1" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="1" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/>';
+const HEART_PX = '<rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/>';
+const HEART = (on) => `<svg viewBox="-1 -1 9 8"><g fill="#4a3832" transform="translate(0 0)">${HEART_OUTLINE}</g><g fill="${on ? '#e8928c' : '#fffaf0'}">${HEART_PX}</g></svg>`;
 const store = {
   get(k, d) { try { const v = localStorage.getItem('closed-door:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('closed-door:' + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
@@ -210,17 +219,17 @@ function startGame() {
   game = createGame(npc);
   closeSub();
   $('frame').classList.remove('revealed');
-  $('roomImg').hidden = true;
-  $('roomImg').removeAttribute('src');
-  $('roomPlaceholder').hidden = true;
-  $('door').className = 'door';
+  svgShow($('roomImg'), false);
+  $('roomImg').removeAttribute('href');
+  svgShow($('roomPlaceholder'), false);
+  setCls($('door'), 'door');
   $('spill').classList.remove('on');
-  $('giftOnMat').className = 'gift-on-mat';
+  setCls($('giftOnMat'), 'gift');
   $('npcName').textContent = npc.name;
   $('npcRel').textContent = `${npc.relation} · ${PERSONALITIES[npc.personality].label}`;
   $('npcInitial').textContent = npc.name.slice(0, 1);
   $('bubbleName').textContent = npc.name;
-  $('nameplate').textContent = `${npc.name}의 방`;
+  $('nameplate').textContent = npc.name.length > 5 ? npc.name.slice(0, 5) : `${npc.name}의 방`;
   $('letterTo').textContent = `To. ${npc.name}`;
   setBubble(npc.personality === 'gentle' ? '...혼자 있고 싶어요.' : '...가.');
   setNarration('쾅. 문이 닫혔다.');
@@ -262,16 +271,20 @@ function renderStatus(animate = true) {
 
   const door = $('door');
   door.classList.toggle('ajar', idx === 1 || idx === 2);
-  $('lockPlate').innerHTML = icon(idx >= 2 ? 'unlock' : 'lock');
-  $('lockPlate').classList.toggle('unlocked', idx >= 2);
   const hanger = $('hanger');
   const text = HANGER[PERSONALITIES[npc.personality].speech][game.door];
   if ($('hangerText').textContent !== text && animate) replay(hanger, 'swing');
   $('hangerText').textContent = text;
-  hanger.hidden = !text;
-  hanger.className = `hanger ${d.tone}${hanger.classList.contains('swing') ? ' swing' : ''}`;
+  hanger.classList.toggle('is-hidden', !text);
+  hanger.classList.remove('locked', 'ajar', 'unlocked', 'open');
+  hanger.classList.add(d.tone);
   const light = idx >= 2 ? 3 : idx === 1 ? 2 : tier >= 2 ? 1 : 0;
-  $('lightGap').className = `light-gap${light ? ' l' + light : ''}`;
+  setCls($('lightGap'), `light-gap${light ? ' l' + light : ''}`);
+  const hearts = $('hearts');
+  const filled = game.history.length ? tier + 1 : 1;
+  const prevFilled = Number(hearts.dataset.n || 0);
+  hearts.innerHTML = [0, 1, 2, 3, 4].map((i) => `<span class="${i < filled ? 'on' : ''}${animate && i === filled - 1 && filled > prevFilled ? ' on' : ''}">${HEART(i < filled)}</span>`).join('');
+  hearts.dataset.n = filled;
 }
 
 function renderHistory() {
@@ -283,7 +296,7 @@ function renderHistory() {
       const moved = prev !== h.door;
       const back = ORDER.indexOf(h.door) < ORDER.indexOf(prev);
       const sub = h.text ? ` <em>“${esc(h.text.slice(0, 14))}${h.text.length > 14 ? '…' : ''}”</em>` : h.actionLabel.includes('(') ? ` <em>${esc(h.actionLabel.split('(')[1].replace(')', ''))}</em>` : '';
-      return `<li><span class="t-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><span class="t-txt">${esc(ACTIONS[h.action].short)}${sub}</span>${moved ? `<span class="t-door${back ? ' back' : ''}">${DOOR[h.door].label}</span>` : ''}</li>`;
+      return `<li><span class="h-num">${h.turn}</span><span class="h-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><span class="h-txt">${esc(ACTIONS[h.action].short)}${sub}</span>${moved ? `<span class="h-door${back ? ' back' : ''}">${DOOR[h.door].label}</span>` : '<span></span>'}</li>`;
     })
     .join('');
   list.scrollTop = list.scrollHeight;
@@ -308,10 +321,10 @@ function setNarration(text) {
 function animateAction(action) {
   const door = $('door');
   const gift = $('giftOnMat');
-  if (gift.classList.contains('on') && action !== 'gift') gift.className = 'gift-on-mat';
+  if (gift.classList.contains('on') && action !== 'gift') setCls(gift, 'gift');
   if (action === 'knock') { replay(door, 'knock'); replay($('knockRing'), 'go'); replay($('hanger'), 'swing'); }
   if (action === 'letter') replay($('letterFly'), 'go');
-  if (action === 'gift') { gift.className = 'gift-on-mat'; void gift.offsetWidth; gift.classList.add('on'); }
+  if (action === 'gift') { setCls(gift, 'gift'); void gift.getBoundingClientRect(); gift.classList.add('on'); }
 }
 
 function setBusy(on) {
@@ -349,7 +362,7 @@ async function play(action, text = '', extra = {}) {
   if (action === 'gift' && ((out.cat || '') === 'giftGood' || entry.dw > 2)) setTimeout(() => $('giftOnMat').classList.add('taken'), 900);
   if (ORDER.indexOf(entry.door) < ORDER.indexOf(prevDoor)) replay($('door'), 'slam');
   if (entry.door === 'UNLOCKED' && prevDoor !== 'UNLOCKED') { $('door').classList.add('turn'); setTimeout(() => $('door').classList.remove('turn'), 650); }
-  $('tip').innerHTML = TIPS[entry.tag] || $('tip').innerHTML;
+  if (TIPS[entry.tag] && $('tip').innerHTML !== TIPS[entry.tag]) { $('tip').innerHTML = TIPS[entry.tag]; replay($('tip'), 'flash'); }
   renderStatus();
   renderHistory();
 
@@ -361,16 +374,15 @@ async function play(action, text = '', extra = {}) {
 async function openDoor() {
   const door = $('door');
   await sleep(1100);
-  if (ui.image) { $('roomImg').src = ui.image; $('roomImg').hidden = false; }
-  else $('roomPlaceholder').hidden = false;
+  if (ui.image) { $('roomImg').setAttribute('href', ui.image); svgShow($('roomImg'), true); }
+  else svgShow($('roomPlaceholder'), true);
   door.classList.add('turn');
   await sleep(380);
   door.classList.remove('ajar');
   door.classList.add('open');
-  $('hanger').hidden = true;
   $('frame').classList.add('revealed');
   $('spill').classList.add('on');
-  $('lightGap').className = 'light-gap l3';
+  setCls($('lightGap'), 'light-gap l3');
   $('stage').dataset.tier = '4';
 
   let result = null;
@@ -463,7 +475,7 @@ function openLog() {
   if (!game || !game.history.length) list.innerHTML = '<p class="log-empty">아직 기록이 없어요.</p>';
   else
     list.innerHTML = game.history
-      .map((h) => `<div class="log-turn"><span class="t-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><div>
+      .map((h) => `<div class="log-turn"><span class="h-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><div>
         <div class="t"><span>TRY ${pad(h.turn)}</span><span>${DOOR[h.door].label}</span></div>
         <p class="pc">${esc(h.actionLabel)}${h.text ? ` — ${h.action === 'act' ? `<i>${esc(h.text)}</i>` : `“${esc(h.text)}”`}` : ''}</p>
         <p class="npc">${h.npcLine ? esc(h.npcLine) : '……'}</p>

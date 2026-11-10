@@ -8,171 +8,322 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app" id="app">
+    <!-- TOP HUD -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true"><i></i></span>
-        <h1 class="logo">CLOSED DOOR</h1>
+        <svg class="brand-mark" viewBox="0 0 40 48" aria-hidden="true">
+          <rect x="4" y="3" width="32" height="42" rx="7" fill="#f6e7cd" stroke="#4a3832" stroke-width="3" />
+          <rect x="9" y="8" width="22" height="37" rx="4" fill="#b8896a" stroke="#4a3832" stroke-width="3" />
+          <circle cx="25.5" cy="28" r="2.6" fill="#f0c86e" stroke="#4a3832" stroke-width="1.6" />
+        </svg>
+        <div class="brand-text">
+          <h1 class="logo">CLOSED DOOR</h1>
+          <span class="logo-sub">one more knock</span>
+        </div>
       </div>
-      <span class="eyebrow-pill">APOLOGY SIMULATOR</span>
+      <div class="title-banner"><span>APOLOGY SIMULATOR</span></div>
       <nav class="top-actions">
-        <button class="top-btn" id="btnLog" type="button"><span data-icon="list"></span><span>기록</span></button>
-        <button class="top-btn" id="btnRestartTop" type="button"><span data-icon="rotate"></span><span>다시</span></button>
-        <button class="top-btn" id="btnSettings" type="button"><span>SETTING</span><span data-icon="gear" class="spin"></span></button>
+        <button class="hud-btn" id="btnLog" type="button" title="대화 기록"><span data-icon="book"></span><em>기록</em></button>
+        <button class="hud-btn" id="btnRestartTop" type="button" title="다시 시작"><span data-icon="rotate"></span><em>다시</em></button>
+        <button class="hud-btn round" id="btnSettings" type="button" title="설정" aria-label="설정"><span data-icon="gear" class="spin"></span></button>
       </nav>
     </header>
 
     <main class="board">
       <!-- LEFT -->
       <section class="panel info" aria-label="게임 정보">
-        <div class="sec">
-          <h2 class="label">GAME INFO</h2>
-          <div class="try-row">
-            <div class="try"><small>TRY</small><span id="tryCount">00</span></div>
-            <div class="mood-face" id="moodFace" aria-hidden="true"></div>
-          </div>
-          <div class="npc-chip">
-            <span class="npc-initial" id="npcInitial">?</span>
-            <span class="npc-meta"><b id="npcName">-</b><em id="npcRel">-</em></span>
-          </div>
+        <h2 class="panel-title">GAME INFO</h2>
+
+        <div class="try-card">
+          <div class="try-label">TRY</div>
+          <div class="try-num" id="tryCount">00</div>
+          <div class="try-face" id="moodFace" aria-hidden="true"></div>
         </div>
 
-        <div class="sec">
-          <h3 class="label">DOOR STATUS</h3>
+        <div class="npc-card">
+          <div class="npc-portrait" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle cx="24" cy="19" r="9" fill="#e9d9c0" stroke="#4a3832" stroke-width="2.6"/><path d="M8 44c1.5-9 8-14 16-14s14.5 5 16 14" fill="#e9d9c0" stroke="#4a3832" stroke-width="2.6" stroke-linecap="round"/><text x="24" y="23" text-anchor="middle" font-size="12" fill="#4a3832" font-family="Jua, sans-serif">?</text></svg>
+          </div>
+          <div class="npc-meta">
+            <b id="npcName">-</b>
+            <span id="npcRel">-</span>
+          </div>
+          <span class="npc-init" id="npcInitial" hidden></span>
+        </div>
+
+        <div class="stat">
+          <div class="stat-head"><span class="stat-label">DOOR STATUS</span><span class="badge locked" id="doorBadge">LOCKED</span></div>
           <ol class="stepper" id="stepper">
-            <li data-step="0"><i></i><span>잠김</span></li>
-            <li data-step="1"><i></i><span>기댐</span></li>
-            <li data-step="2"><i></i><span>해제</span></li>
-            <li data-step="3"><i></i><span>열림</span></li>
+            <li data-step="0"><i data-icon="lock"></i><span>잠김</span></li>
+            <li data-step="1"><i data-icon="ear"></i><span>기댐</span></li>
+            <li data-step="2"><i data-icon="key"></i><span>해제</span></li>
+            <li data-step="3"><i data-icon="door"></i><span>열림</span></li>
           </ol>
-          <div class="status-row">
-            <span class="badge locked" id="doorBadge">LOCKED</span>
+        </div>
+
+        <div class="stat">
+          <div class="stat-head"><span class="stat-label">NPC MOOD</span></div>
+          <div class="mood-row">
+            <div class="mood" id="moodText">-</div>
+            <div class="hearts" id="hearts" aria-hidden="true"></div>
           </div>
         </div>
 
-        <div class="sec">
-          <h3 class="label">NPC MOOD</h3>
-          <div class="mood" id="moodText">-</div>
-        </div>
-
-        <div class="sec grow">
-          <div class="sec-head">
-            <h3 class="label">HISTORY</h3>
-            <button class="text-btn" id="btnLog2" type="button">전체 보기</button>
-          </div>
-          <ol class="timeline" id="historyList"></ol>
+        <div class="stat grow">
+          <div class="stat-head"><span class="stat-label">HISTORY</span><button class="link-btn" id="btnLog2" type="button">전체 보기</button></div>
+          <ol class="history" id="historyList"></ol>
         </div>
       </section>
 
       <!-- CENTER -->
       <section class="panel stage" id="stage" aria-label="문" data-tier="0">
         <div class="bubble" id="bubble" aria-live="polite">
-          <div class="bubble-name"><span id="bubbleName">NPC</span></div>
+          <div class="bubble-name" id="bubbleName">NPC</div>
           <p class="bubble-line" id="bubbleLine">"..."</p>
+          <p class="narration" id="narration">...문 너머는 조용하다.</p>
         </div>
 
-        <div class="scene" id="scene">
-          <div class="wall">
-            <div class="frame" id="frame">
-              <div class="sconce" aria-hidden="true"><i></i></div>
-              <div class="plant" aria-hidden="true"><i class="leaf a"></i><i class="leaf b"></i><i class="leaf c"></i><i class="pot"></i></div>
-              <div class="room" id="room">
-                <div class="room-light"></div>
-                <img id="roomImg" alt="" hidden />
-                <div class="room-placeholder" id="roomPlaceholder" hidden><span data-icon="user"></span></div>
-              </div>
-              <div class="door" id="door">
-                <div class="door-face">
-                  <div class="nameplate" id="nameplate">-</div>
-                  <div class="peephole"></div>
-                  <div class="dpanel top"></div>
-                  <div class="mail-slot"><div class="letter-fly" id="letterFly"></div></div>
-                  <div class="dpanel bottom"></div>
-                  <div class="handle" id="handle">
-                    <span class="lock-dot" id="lockPlate"><span data-icon="lock"></span></span>
-                    <span class="knob"></span>
-                    <div class="hanger" id="hanger"><span id="hangerText">들어오지 마</span></div>
-                  </div>
-                  <div class="knock-ring" id="knockRing"></div>
-                </div>
-                <div class="door-edge"></div>
-              </div>
-            </div>
-          </div>
-          <div class="floor">
-            <div class="light-gap" id="lightGap"></div>
-            <div class="spill" id="spill"></div>
-            <div class="mat"><div class="gift-on-mat" id="giftOnMat"></div></div>
-          </div>
-        </div>
-        <p class="narration" id="narration">...문 너머는 조용하다.</p>
+        <svg class="scene" id="scene" viewBox="0 0 800 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <defs>
+            <pattern id="wp" width="44" height="44" patternUnits="userSpaceOnUse">
+              <rect width="44" height="44" class="wall-fill" />
+              <path d="M22 13l5 9-5 9-5-9z" class="wall-motif" />
+              <circle cx="0" cy="0" r="2.4" class="wall-motif" />
+              <circle cx="44" cy="0" r="2.4" class="wall-motif" />
+              <circle cx="0" cy="44" r="2.4" class="wall-motif" />
+              <circle cx="44" cy="44" r="2.4" class="wall-motif" />
+            </pattern>
+            <linearGradient id="roomGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff6dc" />
+              <stop offset="1" stop-color="#f6d79c" />
+            </linearGradient>
+            <linearGradient id="spillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffe7a6" stop-opacity=".95" />
+              <stop offset="1" stop-color="#ffe7a6" stop-opacity="0" />
+            </linearGradient>
+            <radialGradient id="glow">
+              <stop offset="0" stop-color="#ffe9ad" stop-opacity=".85" />
+              <stop offset="1" stop-color="#ffe9ad" stop-opacity="0" />
+            </radialGradient>
+            <clipPath id="roomClip"><rect x="310" y="118" width="180" height="366" rx="10" /></clipPath>
+            <pattern id="dith" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="8" height="8" fill="#f8d6d0" />
+              <rect width="4" height="4" fill="#f3c2ba" />
+              <rect x="4" y="4" width="4" height="4" fill="#f3c2ba" />
+            </pattern>
+            <clipPath id="rugClip"><rect x="310" y="516" width="180" height="38" rx="19" /></clipPath>
+            <filter id="soft" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="4" /></filter>
+          </defs>
+
+          <!-- wall -->
+          <rect x="-900" y="-600" width="2600" height="1090" fill="url(#wp)" />
+          <g class="sparks">
+            <path class="spark" d="M110 64h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M250 34h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M560 52h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M690 90h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M60 184h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M740 194h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M170 314h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M640 294h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M-120 114h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M900 144h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M-60 254h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+            <path class="spark" d="M980 54h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
+          </g>
+          <rect x="-910" y="346" width="2620" height="12" rx="3" class="trim" />
+          <rect x="-910" y="358" width="2620" height="116" class="wains" />
+          <g class="wains-panels">
+            <rect x="-724" y="374" width="76" height="84" rx="6" />
+            <rect x="-632" y="374" width="76" height="84" rx="6" />
+            <rect x="-540" y="374" width="76" height="84" rx="6" />
+            <rect x="-448" y="374" width="76" height="84" rx="6" />
+            <rect x="-356" y="374" width="76" height="84" rx="6" />
+            <rect x="-264" y="374" width="76" height="84" rx="6" />
+            <rect x="-172" y="374" width="76" height="84" rx="6" />
+            <rect x="-80" y="374" width="76" height="84" rx="6" />
+            <rect x="12" y="374" width="76" height="84" rx="6" />
+            <rect x="104" y="374" width="76" height="84" rx="6" />
+            <rect x="196" y="374" width="76" height="84" rx="6" />
+            <rect x="528" y="374" width="76" height="84" rx="6" />
+            <rect x="620" y="374" width="76" height="84" rx="6" />
+            <rect x="712" y="374" width="76" height="84" rx="6" />
+            <rect x="804" y="374" width="76" height="84" rx="6" />
+            <rect x="896" y="374" width="76" height="84" rx="6" />
+            <rect x="988" y="374" width="76" height="84" rx="6" />
+            <rect x="1080" y="374" width="76" height="84" rx="6" />
+            <rect x="1172" y="374" width="76" height="84" rx="6" />
+            <rect x="1264" y="374" width="76" height="84" rx="6" />
+            <rect x="1356" y="374" width="76" height="84" rx="6" />
+            <rect x="1448" y="374" width="76" height="84" rx="6" />
+            <rect x="1540" y="374" width="76" height="84" rx="6" />
+          </g>
+          <rect x="-910" y="470" width="2620" height="20" class="trim" />
+
+          <!-- floor -->
+          <rect x="-910" y="490" width="2620" height="400" class="floor" />
+          <g class="planks">
+            <path d="M-900 526h2600M-900 566h2600" />
+            <path d="M-260 490v36M-90 490v36M90 490v36M260 490v36M560 490v36M720 490v36M890 490v36M1060 490v36M-170 526v40M0 526v40M170 526v40M410 526v40M640 526v40M880 526v40M1040 526v40M-200 566v34M60 566v34M330 566v34M500 566v34M760 566v34M980 566v34" />
+          </g>
+          <polygon id="spill" class="spill" points="312,490 488,490 600,600 200,600" fill="url(#spillGrad)" />
+
+          <!-- left props -->
+          <g class="prop frame-pic">
+            <rect x="150" y="178" width="84" height="102" rx="8" class="pic-frame" />
+            <rect x="162" y="190" width="60" height="78" rx="4" class="pic-in" />
+            <path d="M192 248c-12-8-17-14-17-21 0-5 4-9 9-9 3 0 6 2 8 5 2-3 5-5 8-5 5 0 9 4 9 9 0 7-5 13-17 21z" class="pic-heart" />
+          </g>
+          <g class="prop sconce">
+            <circle cx="258" cy="210" r="56" fill="url(#glow)" class="lamp-glow" />
+            <rect x="250" y="226" width="16" height="30" rx="5" class="metal" />
+            <path d="M238 222h40l-8-30h-24z" class="shade" />
+          </g>
+
+          <!-- right props -->
+          <g class="prop shelf">
+            <rect x="560" y="236" width="118" height="12" rx="4" class="wood" />
+            <rect x="572" y="196" width="14" height="40" rx="2" class="book b1" />
+            <rect x="588" y="204" width="12" height="32" rx="2" class="book b2" />
+            <rect x="602" y="200" width="14" height="36" rx="2" class="book b3" transform="rotate(8 609 218)" />
+            <path d="M640 236v-14c0-8 6-14 13-14s13 6 13 14v14z" class="cat" />
+            <path d="M642 212l2-10 7 6M664 212l-2-10-7 6" class="cat" />
+            <circle cx="648" cy="221" r="1.8" class="ink-dot" /><circle cx="658" cy="221" r="1.8" class="ink-dot" />
+          </g>
+          <g class="prop table">
+            <rect x="560" y="410" width="128" height="14" rx="5" class="wood" />
+            <rect x="572" y="424" width="12" height="62" rx="3" class="wood-d" />
+            <rect x="664" y="424" width="12" height="62" rx="3" class="wood-d" />
+            <path d="M600 410l-4-34h40l-4 34z" class="pot" />
+            <path d="M616 376c-6-26-2-46 4-54 6 10 6 32 0 54z" class="leaf" />
+            <path d="M614 378c-18-12-26-30-26-40 14 2 26 20 28 40z" class="leaf l2" />
+            <path d="M622 378c14-16 28-22 36-22-2 14-18 24-36 22z" class="leaf l3" />
+            <rect x="644" y="394" width="34" height="8" rx="2" class="book b2" />
+            <rect x="648" y="386" width="28" height="8" rx="2" class="book b1" />
+          </g>
+
+          <!-- doorway -->
+          <rect x="290" y="98" width="220" height="392" rx="20" class="door-trim" />
+          <rect x="310" y="118" width="180" height="372" rx="10" fill="url(#roomGrad)" class="opening" />
+          <g id="frame" class="room">
+            <g id="roomPlaceholder" class="is-hidden placeholder">
+              <circle cx="400" cy="270" r="40" />
+              <path d="M330 490c4-70 32-110 70-110s66 40 70 110z" />
+            </g>
+            <image id="roomImg" class="is-hidden room-img" x="310" y="118" width="180" height="372" preserveAspectRatio="xMidYMid slice" clip-path="url(#roomClip)" />
+          </g>
+          <rect id="lightGap" class="light-gap" x="314" y="482" width="172" height="8" rx="4" filter="url(#soft)" />
+
+          <g id="door" class="door">
+            <g class="door-shake">
+              <g class="door-leaf" id="doorLeaf">
+                <rect x="310" y="118" width="180" height="372" rx="10" class="leaf-base" />
+                <rect x="472" y="122" width="14" height="366" rx="4" class="leaf-edge" />
+                <rect x="352" y="132" width="96" height="28" rx="7" class="plate" />
+                <text x="400" y="152" text-anchor="middle" class="plate-text" id="nameplate">-</text>
+                <circle cx="400" cy="178" r="6" class="peep" />
+                <rect x="334" y="196" width="132" height="96" rx="10" class="panel-in" />
+                <rect x="358" y="306" width="84" height="13" rx="5" class="slot" />
+                <rect x="334" y="334" width="132" height="134" rx="10" class="panel-in" />
+                <g class="knob-g">
+                  <circle cx="462" cy="316" r="15" class="rosette" />
+                  <circle cx="462" cy="316" r="9.5" class="knob" />
+                  <circle cx="459" cy="313" r="3" class="knob-hi" />
+                </g>
+              </g>
+              <g id="hanger" class="hanger">
+                <path d="M462 318l-20 30M462 318l20 30" class="string" />
+                <rect x="418" y="344" width="88" height="46" rx="9" class="tag" />
+                <circle cx="462" cy="352" r="2.4" class="ink-dot" />
+                <text x="462" y="375" text-anchor="middle" class="tag-text" id="hangerText">들어오지 마</text>
+              </g>
+            </g>
+          </g>
+          <circle id="knockRing" class="knock-ring" cx="400" cy="240" r="34" />
+
+          <!-- rug + items -->
+          <g class="rug">
+            <rect x="296" y="506" width="208" height="58" rx="29" class="rug-base" />
+            <rect x="296" y="506" width="208" height="58" fill="url(#dith)" clip-path="url(#rugClip)" class="dither" />
+            <rect x="310" y="516" width="180" height="38" rx="19" class="rug-line" />
+          </g>
+          <g id="letterFly" class="letter-fly">
+            <rect x="374" y="252" width="52" height="34" rx="4" class="env" />
+            <path d="M374 256l26 16 26-16" class="env-line" />
+            <circle cx="400" cy="270" r="4" class="env-seal" />
+          </g>
+          <g id="giftOnMat" class="gift">
+            <rect x="420" y="500" width="44" height="36" rx="5" class="gift-box" />
+            <rect x="437" y="500" width="10" height="36" class="gift-rib" />
+            <path d="M442 500c-14-14-22-6-16 0zM442 500c14-14 22-6 16 0z" class="gift-bow" />
+          </g>
+        </svg>
+
       </section>
 
       <!-- RIGHT -->
       <section class="panel actions" aria-label="행동 선택">
-        <div class="sec-head">
-          <h2 class="label">YOUR ACTION</h2>
-          <span class="hint">1 – 5</span>
-        </div>
+        <h2 class="panel-title">YOUR ACTION</h2>
         <div class="action-list" id="actionList"></div>
         <div class="subpanel" id="subpanel" hidden></div>
-        <p class="tip" id="tip"></p>
+        <div class="tip" id="tip"></div>
       </section>
     </main>
 
+    <!-- COMPOSER -->
     <form class="composer" id="directForm" autocomplete="off">
-      <div class="composer-head">
-        <label class="label" for="directInput">DIRECT INPUT</label>
-        <div class="mode-seg" id="modeSeg" role="tablist" aria-label="입력 종류">
-          <button type="button" data-mode="say" class="on" role="tab" aria-selected="true"><span data-icon="chat"></span>대사</button>
-          <button type="button" data-mode="act" role="tab" aria-selected="false"><span data-icon="sparkle"></span>행동</button>
-        </div>
+      <div class="mode-tabs" id="modeSeg" role="tablist" aria-label="입력 종류">
+        <button type="button" data-mode="say" class="on" role="tab" aria-selected="true"><span data-icon="chat"></span>대사</button>
+        <button type="button" data-mode="act" role="tab" aria-selected="false"><span data-icon="sparkle"></span>행동</button>
       </div>
-      <div class="composer-row">
-        <input id="directInput" maxlength="300" placeholder="NPC에게 하고 싶은 말을 입력하세요..." />
-        <button class="send" type="submit" aria-label="보내기"><span data-icon="send"></span></button>
-      </div>
+      <label class="sr-only" for="directInput">직접 입력</label>
+      <input id="directInput" maxlength="300" placeholder="NPC에게 하고 싶은 말을 입력하세요..." />
+      <button class="send" type="submit" aria-label="보내기"><span data-icon="send"></span></button>
     </form>
   </div>
 
   <!-- SETUP -->
   <div class="overlay" id="setup" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
     <form class="sheet setup-sheet" id="setupForm">
+      <h2 class="sheet-ribbon" id="setupTitle">NEW GAME</h2>
       <aside class="setup-aside">
-        <div class="aside-top">
-          <span class="eyebrow-pill small">NEW GAME</span>
-          <h2 id="setupTitle">누가 문을<br />닫았나요?</h2>
-          <p>문 너머의 사람을 정해 주세요. 그 사람의 마음은 당신의 사과에 따라 움직입니다.</p>
-        </div>
+        <p class="setup-q">누가 문을<br />닫았나요?</p>
+        <p class="setup-desc">문 너머의 사람을 정해 주세요. 그 사람의 마음은 당신의 사과에 따라 움직입니다.</p>
         <label class="drop" id="drop">
           <input type="file" accept="image/*" id="imgInput" hidden />
-          <div class="mini-door">
-            <div class="mini-plate" id="miniPlate">이름</div>
-            <div class="mini-knob"></div>
-          </div>
+          <svg class="drop-door" viewBox="0 0 120 170" aria-hidden="true">
+            <rect x="4" y="4" width="112" height="166" rx="14" fill="#f3e2c6" stroke="#4a3832" stroke-width="4" />
+            <rect x="16" y="16" width="88" height="154" rx="7" class="drop-leaf" stroke="#4a3832" stroke-width="4" />
+            <rect x="32" y="26" width="56" height="18" rx="5" fill="#fffaf0" stroke="#4a3832" stroke-width="2.6" />
+            <text x="60" y="39.5" text-anchor="middle" font-size="11" fill="#4a3832" font-family="Jua, sans-serif" id="miniPlate">이름</text>
+            <rect x="28" y="54" width="64" height="40" rx="6" fill="none" stroke="#4a3832" stroke-width="2.6" opacity=".55" />
+            <rect x="28" y="104" width="64" height="54" rx="6" fill="none" stroke="#4a3832" stroke-width="2.6" opacity=".55" />
+            <circle cx="90" cy="98" r="5.5" fill="#f0c86e" stroke="#4a3832" stroke-width="2.4" />
+          </svg>
           <div class="drop-inner" id="dropInner">
             <span data-icon="image"></span>
             <strong>문 뒤에 숨길 사진</strong>
-            <span>클릭하거나 끌어다 놓기 · 선택</span>
+            <span>클릭 또는 끌어다 놓기 · 선택</span>
           </div>
           <div class="drop-secret" id="dropSecret" hidden>
-            <span data-icon="lock"></span>
+            <span data-icon="eyeoff"></span>
             <strong>문 뒤에 숨겼어요</strong>
             <span id="fileName"></span>
-            <button type="button" class="text-btn" id="imgClear">지우기</button>
+            <button type="button" class="link-btn" id="imgClear">지우기</button>
           </div>
         </label>
-        <p class="aside-note">사진은 이 브라우저 안에서만 쓰이며, 문이 열리는 순간에만 공개됩니다.</p>
+        <p class="aside-note">사진은 이 브라우저 안에서만 쓰이며, 문이 열리는 순간에만 공개돼요.</p>
       </aside>
 
       <div class="setup-main">
-        <div class="setup-sec">
-          <h3><b>01</b>문 너머의 사람</h3>
+        <fieldset class="setup-sec">
+          <legend><b>1</b>문 너머의 사람</legend>
           <div class="grid2">
             <label class="field"><span>이름</span><input name="name" required maxlength="12" placeholder="하윤" /></label>
             <label class="field"><span>나를 부르는 호칭</span><input name="callName" maxlength="10" placeholder="너, 선배, 자기" /></label>
@@ -185,15 +336,15 @@
             <span>성격</span>
             <div class="pers-grid" id="persGrid"></div>
           </div>
-        </div>
+        </fieldset>
 
-        <div class="setup-sec">
-          <h3><b>02</b>무슨 일이 있었나요</h3>
+        <fieldset class="setup-sec">
+          <legend><b>2</b>무슨 일이 있었나요</legend>
           <label class="field"><span>다툰 이유</span>
             <textarea name="incident" rows="2" maxlength="200" placeholder="기념일 약속을 잊고 친구들과 놀러 갔다"></textarea>
           </label>
           <div class="grid2">
-            <label class="field"><span>좋아하는 것 <em>선물 판정에 쓰여요</em></span><input name="likes" maxlength="40" placeholder="딸기 케이크, 고양이" /></label>
+            <label class="field"><span>좋아하는 것 <em>선물 판정</em></span><input name="likes" maxlength="40" placeholder="딸기 케이크, 고양이" /></label>
             <div class="field">
               <span>상처의 깊이 <output id="sevOut">보통</output></span>
               <div class="sev" id="sevPick"></div>
@@ -203,14 +354,12 @@
           <label class="field"><span>성격 메모 <em>AI 모드에서 반영</em></span>
             <input name="personalityNote" maxlength="120" placeholder="겉으로는 쿨한 척, 혼자 있으면 운다" />
           </label>
-        </div>
+        </fieldset>
 
         <div class="setup-foot">
           <div class="engine-note" id="engineNote"></div>
-          <div class="setup-buttons">
-            <button type="button" class="btn ghost" id="btnSample">예시로 채우기</button>
-            <button type="submit" class="btn primary">문 앞으로 가기 <span data-icon="arrow"></span></button>
-          </div>
+          <button type="button" class="btn" id="btnSample">예시로 채우기</button>
+          <button type="submit" class="btn primary">문 앞으로 가기 <span data-icon="arrow"></span></button>
         </div>
       </div>
     </form>
@@ -219,19 +368,17 @@
   <!-- LETTER -->
   <div class="overlay" id="letterModal" hidden role="dialog" aria-modal="true" aria-labelledby="letterTitle">
     <form class="sheet letter-sheet" id="letterForm">
-      <div class="envelope-flap" aria-hidden="true"></div>
-      <div class="letter-head">
-        <h2 id="letterTitle">편지 쓰기</h2>
-        <p>문 아래 틈으로 밀어 넣을 편지예요. 할 말을 천천히 적어 보세요.</p>
-      </div>
+      <h2 class="sheet-ribbon sky" id="letterTitle">LETTER</h2>
+      <p class="sheet-desc">문 아래 틈으로 밀어 넣을 편지예요. 할 말을 천천히 적어 보세요.</p>
       <div class="paper">
         <div class="paper-to" id="letterTo">To.</div>
         <textarea id="letterText" maxlength="500" rows="7" required></textarea>
+        <div class="paper-stamp" aria-hidden="true"><span data-icon="heart"></span></div>
       </div>
       <div class="row-end">
         <span class="count" id="letterCount">0 / 500</span>
-        <button type="button" class="btn ghost" data-close>취소</button>
-        <button type="submit" class="btn primary">문틈에 넣기</button>
+        <button type="button" class="btn" data-close>취소</button>
+        <button type="submit" class="btn primary">문틈에 넣기 <span data-icon="send"></span></button>
       </div>
     </form>
   </div>
@@ -239,10 +386,8 @@
   <!-- LOG -->
   <div class="overlay" id="logModal" hidden role="dialog" aria-modal="true" aria-labelledby="logTitle">
     <div class="sheet log-sheet">
-      <div class="sheet-bar">
-        <h2 id="logTitle">대화 기록</h2>
-        <button type="button" class="icon-btn" data-close aria-label="닫기"><span data-icon="x"></span></button>
-      </div>
+      <h2 class="sheet-ribbon" id="logTitle">HISTORY</h2>
+      <button type="button" class="close-x" data-close aria-label="닫기"><span data-icon="x"></span></button>
       <div class="log-list" id="logList"></div>
     </div>
   </div>
@@ -250,10 +395,8 @@
   <!-- SETTINGS -->
   <div class="overlay" id="settingsModal" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="sheet settings-sheet">
-      <div class="sheet-bar">
-        <h2 id="setTitle">설정</h2>
-        <button type="button" class="icon-btn" data-close aria-label="닫기"><span data-icon="x"></span></button>
-      </div>
+      <h2 class="sheet-ribbon" id="setTitle">SETTING</h2>
+      <button type="button" class="close-x" data-close aria-label="닫기"><span data-icon="x"></span></button>
       <div class="set-group">
         <span class="set-label">NPC 반응 엔진</span>
         <div class="seg" id="engineSeg">
@@ -264,11 +407,11 @@
         <p class="set-desc" id="engineStatus"></p>
       </div>
       <label class="switch-row">
-        <span><b>애니메이션 줄이기</b><em>문 흔들림, 전환 효과를 최소화합니다</em></span>
+        <span><b>애니메이션 줄이기</b><em>문 흔들림, 전환 효과를 최소화해요</em></span>
         <input type="checkbox" id="reduceMotion" class="switch" />
       </label>
       <div class="set-buttons">
-        <button type="button" class="btn ghost" id="btnRestart"><span data-icon="rotate"></span>같은 사람에게 다시 사과하기</button>
+        <button type="button" class="btn" id="btnRestart"><span data-icon="rotate"></span>같은 사람에게 다시 사과하기</button>
         <button type="button" class="btn danger" id="btnReset"><span data-icon="trash"></span>초기화하고 새로 만들기</button>
       </div>
     </div>
@@ -277,6 +420,7 @@
   <!-- RESULT -->
   <div class="overlay result" id="resultModal" hidden role="dialog" aria-modal="true" aria-labelledby="resultTitle">
     <div class="sheet result-sheet">
+      <h2 class="sheet-ribbon sage" id="resultTitle">THE DOOR IS OPEN</h2>
       <div class="result-left">
         <div class="polaroid">
           <span class="tape" aria-hidden="true"></span>
@@ -284,17 +428,13 @@
           <div class="polaroid-cap" id="resultName"></div>
         </div>
         <div class="stats">
-          <div class="stat"><span>총 시도</span><strong id="resTries">0</strong></div>
-          <div class="stat wide"><span>최종 감정</span><strong id="resEmotion">-</strong></div>
+          <div class="mini-stat"><span>총 시도</span><strong id="resTries">0</strong></div>
+          <div class="mini-stat wide"><span>최종 감정</span><strong id="resEmotion">-</strong></div>
         </div>
       </div>
       <div class="result-right">
-        <div class="result-head">
-          <span class="eyebrow-pill small sage">THE DOOR IS OPEN</span>
-          <div class="seal" id="resSeal"><span id="resType">완전한 화해</span></div>
-          <p class="result-note" id="resNote"></p>
-        </div>
-        <h2 class="sr-only" id="resultTitle">결과</h2>
+        <div class="seal" id="resSeal"><span data-icon="heart"></span><span id="resType">완전한 화해</span></div>
+        <p class="result-note" id="resNote"></p>
         <div class="res-block">
           <h3><span data-icon="key"></span>결정적 계기</h3>
           <p id="resDecisive"></p>
@@ -314,8 +454,8 @@
           </div>
         </div>
         <div class="row-end">
-          <button type="button" class="btn ghost" id="resLog">기록 보기</button>
-          <button type="button" class="btn ghost" id="resNew">새 사람</button>
+          <button type="button" class="btn" id="resLog">기록 보기</button>
+          <button type="button" class="btn" id="resNew">새 사람</button>
           <button type="button" class="btn primary" id="resAgain">다시 하기</button>
         </div>
       </div>
