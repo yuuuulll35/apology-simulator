@@ -6,7 +6,7 @@
 
 1. 사과할 상대(NPC)의 이름, 관계, 성격, 다툰 이유, 상처의 깊이, 좋아하는 것을 정한다.
 2. 원하면 NPC 이미지를 올린다. 이미지는 문이 열리는 순간까지 공개되지 않고, 서버로 전송되지 않는다.
-3. 매 턴 행동 하나를 고른다: 노크하기 · 편지 넣기 · 말 걸기 · 선물 두기 · 기다리기 · 직접 입력.
+3. 매 턴 행동 하나를 고른다: 노크하기 · 편지 넣기 · 말 걸기 · 선물 두기 · 기다리기 · 직접 입력(대사 / 행동).
 4. NPC가 문을 열면 결과 화면에서 총 시도 횟수, 최종 감정, 결정적 계기, 내면심리 변화, 문을 열기 직전의 생각, 하고 싶은 말, 화해 결과(완전한 화해 / 조건부 화해 / 어색한 화해)가 공개된다.
 
 단축키: `1`~`5` 행동 선택, `Esc` 창 닫기.
@@ -67,4 +67,5 @@ public/js/data.js  성격별 대사, 문 너머 묘사, 속마음, 엔딩 문구
 ## 사용한 리소스
 
 - 폰트: [Pretendard](https://github.com/orioncactus/pretendard) © Kil Hyung-jin, SIL Open Font License 1.1
+- 폰트: [Gowun Dodum](https://fonts.google.com/specimen/Gowun+Dodum) © Yanghee Ryu, SIL Open Font License 1.1 (NPC 대사)
 - 아이콘: [Lucide](https://lucide.dev) 아이콘을 기반으로 한 인라인 SVG, ISC License

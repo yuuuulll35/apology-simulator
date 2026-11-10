@@ -1,10 +1,11 @@
 export const ACTIONS = {
-  knock: { label: '노크하기', short: '노크', icon: 'hand', key: '1' },
-  letter: { label: '편지 넣기', short: '편지', icon: 'mail', key: '2' },
-  talk: { label: '말 걸기', short: '말 걸기', icon: 'chat', key: '3' },
-  gift: { label: '선물 두기', short: '선물', icon: 'gift', key: '4' },
-  wait: { label: '기다리기', short: '기다림', icon: 'clock', key: '5' },
-  free: { label: '직접 입력', short: '직접 입력', icon: 'pen', key: '' },
+  knock: { label: '노크하기', short: '노크', icon: 'hand', key: '1', tone: 'peach', desc: '조심스럽게 문을 두드린다' },
+  letter: { label: '편지 넣기', short: '편지', icon: 'mail', key: '2', tone: 'sky', desc: '문틈 아래로 편지를 밀어 넣는다' },
+  talk: { label: '말 걸기', short: '말 걸기', icon: 'chat', key: '3', tone: 'sage', desc: '문 너머로 조용히 말을 건넨다' },
+  gift: { label: '선물 두기', short: '선물', icon: 'gift', key: '4', tone: 'rose', desc: '문 앞에 작은 선물을 둔다' },
+  wait: { label: '기다리기', short: '기다림', icon: 'clock', key: '5', tone: 'lav', desc: '아무 말 없이 곁에 머문다' },
+  free: { label: '직접 대사', short: '대사', icon: 'quote', key: '', tone: 'sage' },
+  act: { label: '직접 행동', short: '행동', icon: 'sparkle', key: '', tone: 'peach' },
 };
 
 export const DOOR = {
@@ -181,7 +182,7 @@ export const MESSAGES = {
   },
 };
 
-export const PRESET_TALK = {
-  casual: ['미안해. 내가 잘못했어.', '나 아직 여기 있어.', '얼굴 보고 얘기하고 싶어.'],
-  formal: ['미안해. 내가 잘못했어.', '나 아직 여기 있어.', '얼굴 보고 얘기하고 싶어.'],
+export const HANGER = {
+  casual: { CLOSED: '들어오지 마', AJAR: '듣고만 있음', UNLOCKED: '...', OPEN: '' },
+  formal: { CLOSED: '혼자 있을게요', AJAR: '듣고 있어요', UNLOCKED: '...', OPEN: '' },
 };

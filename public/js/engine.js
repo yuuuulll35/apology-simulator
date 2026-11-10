@@ -60,7 +60,7 @@ export function createGame(npc) {
     history: [],
     used: new Set(),
     streak: { action: null, count: 0 },
-    counts: { knock: 0, letter: 0, talk: 0, gift: 0, wait: 0, free: 0 },
+    counts: { knock: 0, letter: 0, talk: 0, gift: 0, wait: 0, free: 0, act: 0 },
     lastText: '',
     sincere: 0,
     over: false,

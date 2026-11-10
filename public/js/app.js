@@ -1,4 +1,4 @@
-import { ACTIONS, DOOR, RELATIONS, PERSONALITIES } from './data.js';
+import { ACTIONS, DOOR, RELATIONS, PERSONALITIES, HANGER } from './data.js';
 import { createGame, localTurn, commitTurn, localResult, moodTier } from './engine.js';
 
 const ICONS = {
@@ -7,7 +7,8 @@ const ICONS = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
   clock: '<path d="M5 22h14M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
-  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  sparkle: '<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2Z"/>',
+  quote: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   unlock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
@@ -16,21 +17,60 @@ const ICONS = {
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   image: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
   user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+  rotate: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  wave: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  door: '<path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h3M13 20h9M10 12v.01"/><path d="M13 4.56v16.16a.5.5 0 0 1-.68.46l-6.32-2.5A1.5 1.5 0 0 1 5 17.29V5.79a2 2 0 0 1 1.32-1.88l5-1.79A1 1 0 0 1 13 3.18z"/>',
 };
 const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 const paintIcons = (root = document) => root.querySelectorAll('[data-icon]').forEach((el) => (el.innerHTML = icon(el.dataset.icon)));
+
+const FACE_COLORS = { angry: '#f4dcd7', sulky: '#f6e3d4', aside: '#f6ebcf', soft: '#e3eadc', happy: '#e3eadc', sad: '#e1ebf0' };
+function face(expr) {
+  const eyes = '<circle cx="17" cy="23" r="2.6" fill="#3a312b"/><circle cx="31" cy="23" r="2.6" fill="#3a312b"/>';
+  const blush = '<ellipse cx="12.5" cy="30" rx="3.6" ry="2.1" fill="#d48f86" opacity=".38"/><ellipse cx="35.5" cy="30" rx="3.6" ry="2.1" fill="#d48f86" opacity=".38"/>';
+  const parts = {
+    angry: `${eyes}<path d="M11 15.5 20 18.5M37 15.5 28 18.5M17 34q7-6 14 0"/>`,
+    sulky: `${eyes}<path d="M12 17.5h8M28 17.5h8M18.5 33q5.5-2.4 11 0"/>`,
+    aside: '<circle cx="19.5" cy="23" r="2.4" fill="#3a312b"/><circle cx="33" cy="23" r="2.4" fill="#3a312b"/><path d="M20 32.5h8.5"/>',
+    soft: `${eyes}${blush}<path d="M18 31q6 4.5 12 0"/>`,
+    happy: `${blush}<path d="M13.5 24q3.5-4.5 7 0M27.5 24q3.5-4.5 7 0M17 30q7 8 14 0"/>`,
+    sad: `${eyes}<path d="M12 18.5 20 16M36 18.5 28 16M18.5 34q5.5-3.6 11 0"/><path d="M33.5 27.5q-2.2 3.4 0 4.6 2.2-1.2 0-4.6z" fill="#a9c2cf" stroke="none"/>`,
+  };
+  return `<svg viewBox="0 0 48 48" fill="none" stroke="#3a312b" stroke-width="2.2" stroke-linecap="round"><circle class="face-bg" cx="24" cy="24" r="22" fill="${FACE_COLORS[expr]}" stroke="none"/>${parts[expr]}</svg>`;
+}
+const TIER_FACE = ['angry', 'sulky', 'aside', 'soft', 'happy'];
+const PERS_FACE = { tsun: 'sulky', quiet: 'aside', fiery: 'angry', gentle: 'sad' };
 
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = (n) => String(n).padStart(2, '0');
+const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
 const store = {
   get(k, d) { try { const v = localStorage.getItem('closed-door:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('closed-door:' + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
 };
 
+const ORDER = ['CLOSED', 'AJAR', 'UNLOCKED', 'OPEN'];
+const TONES = { peach: ['#f6e3d4', '#b8754a'], sky: ['#e1ebf0', '#5f8699'], sage: ['#e3eadc', '#6c8562'], rose: ['#f4dcd7', '#b4574c'], lav: ['#e9e4f1', '#7a6c98'] };
+const toneStyle = (a) => { const [l, d] = TONES[ACTIONS[a].tone] || TONES.sage; return `--tone-l:${l};--tone-d:${d}`; };
 const TALK_PRESETS = ['미안해. 내가 잘못했어.', '나 아직 여기 있어.', '얼굴 보고 얘기하고 싶어.', '네 얘기 듣고 싶어.'];
 const GIFT_PRESETS = ['꽃 한 송이', '따뜻한 음료', '달달한 디저트', '작은 인형'];
+const SEV_LABELS = ['', '사소함', '서운함', '보통', '깊음', '아주 깊음'];
+const TIPS = {
+  start: '<b>TIP</b> 무엇을 잘못했는지 구체적으로, 상대의 마음을 헤아리며 말할수록 문이 가까워져요.',
+  '연속 노크': '<b>TIP</b> 같은 행동을 계속하면 재촉처럼 느껴질 수 있어요.',
+  '너무 긴 침묵': '<b>TIP</b> 너무 오래 조용하면 떠난 줄 알지도 몰라요.',
+  '변명 섞임': '<b>TIP</b> "근데", "하지만"이 붙으면 사과가 변명처럼 들려요.',
+  '상대 탓': '<b>TIP</b> 탓하는 말은 문을 더 단단히 잠가요.',
+  '같은 말 반복': '<b>TIP</b> 같은 말을 반복하기보다 새로운 진심을 건네 보세요.',
+  '선물 공세': '<b>TIP</b> 물건만으로는 마음이 풀리지 않아요.',
+  '이른 선물': '<b>TIP</b> 아직 화가 많이 났을 때의 선물은 때우려는 것처럼 보여요.',
+  '생각할 시간': '<b>TIP</b> 진심을 전한 뒤의 기다림은 생각할 시간을 줘요.',
+};
 const SAMPLE = {
   name: '하윤', callName: '너', relation: '연인', personality: 'tsun', severity: 3,
   incident: '기념일 저녁 약속을 잊고 친구들과 늦게까지 놀다가 연락도 안 했다',
@@ -38,14 +78,7 @@ const SAMPLE = {
   personalityNote: '자존심이 세서 먼저 풀리는 척은 절대 안 한다',
 };
 
-const ui = {
-  engine: store.get('engine', 'auto'),
-  aiAvailable: false,
-  busy: false,
-  sub: null,
-  image: null,
-  imageName: '',
-};
+const ui = { engine: store.get('engine', 'auto'), aiAvailable: false, busy: false, sub: null, image: null, imageName: '', mode: 'say' };
 let npc = null;
 let game = null;
 
@@ -65,13 +98,14 @@ async function checkHealth() {
 const usingAI = () => ui.aiAvailable && ui.engine !== 'local';
 
 function renderEngine() {
-  const note = usingAI()
-    ? '<b>AI 모드</b> · NPC가 설정을 바탕으로 매번 새롭게 반응합니다.'
+  const note = $('engineNote');
+  note.classList.toggle('ai', usingAI());
+  note.innerHTML = usingAI()
+    ? '<span><b>AI 모드</b> · 설정을 바탕으로 매번 새롭게 반응해요.</span>'
     : ui.aiAvailable
-      ? '<b>로컬 모드</b> · 설정에서 AI 모드로 바꿀 수 있습니다.'
-      : '<b>로컬 모드</b> · AI 서버 없이 내장 엔진으로 반응합니다.';
-  $('engineNote').innerHTML = note;
-  $('engineStatus').textContent = ui.aiAvailable ? 'AI 서버에 연결되어 있습니다.' : 'AI 서버를 찾지 못했습니다. 로컬 엔진만 사용할 수 있습니다.';
+      ? '<span><b>로컬 모드</b> · 설정에서 AI 모드로 바꿀 수 있어요.</span>'
+      : '<span><b>로컬 모드</b> · 내장 엔진이 반응해요.</span>';
+  $('engineStatus').textContent = ui.aiAvailable ? 'AI 서버에 연결되어 있어요.' : 'AI 서버를 찾지 못했어요. 로컬 엔진만 사용할 수 있어요.';
   document.querySelectorAll('#engineSeg button').forEach((b) => {
     b.classList.toggle('on', b.dataset.engine === ui.engine);
     b.disabled = b.dataset.engine === 'ai' && !ui.aiAvailable;
@@ -84,38 +118,50 @@ async function api(path, body) {
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }
-const npcPayload = () => ({
-  ...npc,
-  personalityLabel: PERSONALITIES[npc.personality].label,
-  speech: PERSONALITIES[npc.personality].speech,
-});
+const npcPayload = () => ({ ...npc, personalityLabel: PERSONALITIES[npc.personality].label, speech: PERSONALITIES[npc.personality].speech });
 const historyPayload = () =>
   game.history.map(({ turn, actionLabel, text, npcLine, narration, thought, door, hurt, trust }) => ({ turn, actionLabel, text, npcLine, narration, thought, door, hurt, trust }));
 
 /* ---------- setup ---------- */
+function setChoice(root, attr, value) {
+  root.querySelectorAll(`[data-${attr}]`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset[attr] === value)));
+}
+function setSeverity(v) {
+  $('setupForm').elements.severity.value = v;
+  $('sevOut').textContent = SEV_LABELS[v];
+  [...$('sevPick').children].forEach((b, i) => b.classList.toggle('on', i < v));
+}
+function syncDrop() {
+  const has = Boolean(ui.image);
+  $('drop').classList.toggle('filled', has);
+  $('dropInner').hidden = has;
+  $('dropSecret').hidden = !has;
+  $('fileName').textContent = ui.imageName;
+}
+
 function buildSetup() {
-  const saved = store.get('npc', null);
   const form = $('setupForm');
   const rel = $('relChips');
+  const pers = $('persGrid');
   rel.innerHTML = RELATIONS.map((r) => `<button type="button" class="chip" data-rel="${r}" aria-pressed="false">${r}</button>`).join('');
-  $('persGrid').innerHTML = Object.entries(PERSONALITIES)
-    .map(([k, p]) => `<button type="button" class="pers" data-pers="${k}" aria-pressed="false"><em>${p.speech === 'formal' ? '존댓말' : '반말'}</em><strong>${p.label}</strong><span>${p.desc}</span></button>`)
+  pers.innerHTML = Object.entries(PERSONALITIES)
+    .map(([k, p]) => `<button type="button" class="pers" data-pers="${k}" aria-pressed="false">${face(PERS_FACE[k])}<span><strong>${p.label}<i>${p.speech === 'formal' ? '존댓말' : '반말'}</i></strong><span>${p.desc}</span></span></button>`)
     .join('');
+  $('sevPick').innerHTML = [1, 2, 3, 4, 5].map((n) => `<button type="button" style="--h:${4 + n * 4}px" aria-label="${SEV_LABELS[n]}" data-sev="${n}"></button>`).join('');
   rel.addEventListener('click', (e) => { const b = e.target.closest('.chip'); if (b) setChoice(rel, 'rel', b.dataset.rel); });
-  $('persGrid').addEventListener('click', (e) => { const b = e.target.closest('.pers'); if (b) setChoice($('persGrid'), 'pers', b.dataset.pers); });
-
-  const sevLabels = ['', '사소함', '서운함', '보통', '깊음', '아주 깊음'];
-  const sev = form.elements.severity;
-  const syncSev = () => ($('sevOut').textContent = sevLabels[sev.value]);
-  sev.addEventListener('input', syncSev);
+  pers.addEventListener('click', (e) => { const b = e.target.closest('.pers'); if (b) setChoice(pers, 'pers', b.dataset.pers); });
+  $('sevPick').addEventListener('click', (e) => { const b = e.target.closest('[data-sev]'); if (b) setSeverity(Number(b.dataset.sev)); });
+  const syncPlate = () => ($('miniPlate').textContent = form.elements.name.value.trim() || '이름');
+  form.elements.name.addEventListener('input', syncPlate);
 
   const fill = (d) => {
-    for (const k of ['name', 'callName', 'incident', 'likes', 'personalityNote', 'severity']) if (d[k] != null) form.elements[k].value = d[k];
+    for (const k of ['name', 'callName', 'incident', 'likes', 'personalityNote']) if (d[k] != null) form.elements[k].value = d[k];
     setChoice(rel, 'rel', d.relation || '연인');
-    setChoice($('persGrid'), 'pers', d.personality || 'tsun');
-    syncSev();
+    setChoice(pers, 'pers', d.personality || 'tsun');
+    setSeverity(Number(d.severity) || 3);
+    syncPlate();
   };
-  fill(saved || { relation: '연인', personality: 'tsun', severity: 3 });
+  fill(store.get('npc', null) || { relation: '연인', personality: 'tsun', severity: 3 });
   $('btnSample').addEventListener('click', () => fill(SAMPLE));
 
   const input = $('imgInput');
@@ -147,8 +193,8 @@ function buildSetup() {
       name: f.name.value.trim() || '그 사람',
       callName: f.callName.value.trim(),
       relation: rel.querySelector('[aria-pressed="true"]')?.dataset.rel || '친구',
-      personality: $('persGrid').querySelector('[aria-pressed="true"]')?.dataset.pers || 'tsun',
-      severity: Number(f.severity.value),
+      personality: pers.querySelector('[aria-pressed="true"]')?.dataset.pers || 'tsun',
+      severity: Number(f.severity.value) || 3,
       incident: f.incident.value.trim(),
       likes: f.likes.value.trim(),
       personalityNote: f.personalityNote.value.trim(),
@@ -158,34 +204,27 @@ function buildSetup() {
     startGame();
   });
 }
-function setChoice(root, attr, value) {
-  root.querySelectorAll(`[data-${attr}]`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset[attr] === value)));
-}
-function syncDrop() {
-  const has = Boolean(ui.image);
-  $('drop').classList.toggle('filled', has);
-  $('dropInner').hidden = has;
-  $('dropSecret').hidden = !has;
-  $('fileName').textContent = ui.imageName;
-}
 
 /* ---------- game ---------- */
 function startGame() {
   game = createGame(npc);
   closeSub();
-  const frame = document.querySelector('.frame');
-  frame.classList.remove('revealed');
+  $('frame').classList.remove('revealed');
   $('roomImg').hidden = true;
   $('roomImg').removeAttribute('src');
   $('roomPlaceholder').hidden = true;
   $('door').className = 'door';
+  $('spill').classList.remove('on');
   $('giftOnMat').className = 'gift-on-mat';
   $('npcName').textContent = npc.name;
   $('npcRel').textContent = `${npc.relation} · ${PERSONALITIES[npc.personality].label}`;
+  $('npcInitial').textContent = npc.name.slice(0, 1);
   $('bubbleName').textContent = npc.name;
-  document.querySelector('.npc-avatar').textContent = npc.name.slice(0, 1);
+  $('nameplate').textContent = `${npc.name}의 방`;
+  $('letterTo').textContent = `To. ${npc.name}`;
   setBubble(npc.personality === 'gentle' ? '...혼자 있고 싶어요.' : '...가.');
-  setNarration('쾅. 문이 닫혔다. 문 너머는 조용하다.');
+  setNarration('쾅. 문이 닫혔다.');
+  $('tip').innerHTML = TIPS.start;
   renderStatus(false);
   renderHistory();
   hide('resultModal');
@@ -193,29 +232,44 @@ function startGame() {
 
 function renderStatus(animate = true) {
   const d = DOOR[game.door];
+  const idx = ORDER.indexOf(game.door);
   const badge = $('doorBadge');
-  if (badge.textContent !== d.label && animate) { badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+  const changed = badge.textContent !== d.label;
   badge.textContent = d.label;
-  badge.className = `badge ${d.tone}${badge.classList.contains('pop') ? ' pop' : ''}`;
+  badge.className = `badge ${d.tone}`;
   badge.title = d.ko;
-  const idx = ['CLOSED', 'AJAR', 'UNLOCKED', 'OPEN'].indexOf(game.door);
-  const prog = $('doorProgress');
-  prog.className = `door-progress ${d.tone}`;
-  [...prog.children].forEach((el, i) => el.classList.toggle('on', i <= idx));
+  if (changed && animate) replay(badge, 'pop');
 
-  const mood = $('moodText');
+  const step = $('stepper');
+  step.className = `stepper ${d.tone}`;
+  [...step.children].forEach((li, i) => { li.classList.toggle('done', i <= idx); li.classList.toggle('now', i === idx); });
+
+  const tier = game.history.length ? moodTier(game) : 0;
   const label = game.history.length ? game.history[game.history.length - 1].mood : '단단히 화남';
-  if (mood.textContent !== label) { mood.textContent = label; if (animate) { mood.classList.remove('fade'); void mood.offsetWidth; mood.classList.add('fade'); } }
+  const mood = $('moodText');
+  if (mood.textContent !== label) { mood.textContent = label; if (animate) replay(mood, 'fade'); }
+  const faceEl = $('moodFace');
+  if (faceEl.dataset.expr !== TIER_FACE[tier]) {
+    faceEl.dataset.expr = TIER_FACE[tier];
+    faceEl.innerHTML = face(TIER_FACE[tier]);
+    if (animate) replay(faceEl, 'bump');
+  }
+  $('stage').dataset.tier = String(Math.max(tier, idx >= 2 ? 3 : 0));
 
   const tryEl = $('tryCount');
   tryEl.textContent = pad(game.history.length);
-  if (animate) { tryEl.classList.remove('bump'); void tryEl.offsetWidth; tryEl.classList.add('bump'); }
+  if (animate) replay(tryEl, 'bump');
 
   const door = $('door');
   door.classList.toggle('ajar', idx === 1 || idx === 2);
   $('lockPlate').innerHTML = icon(idx >= 2 ? 'unlock' : 'lock');
   $('lockPlate').classList.toggle('unlocked', idx >= 2);
-  const tier = moodTier(game);
+  const hanger = $('hanger');
+  const text = HANGER[PERSONALITIES[npc.personality].speech][game.door];
+  if ($('hangerText').textContent !== text && animate) replay(hanger, 'swing');
+  $('hangerText').textContent = text;
+  hanger.hidden = !text;
+  hanger.className = `hanger ${d.tone}${hanger.classList.contains('swing') ? ' swing' : ''}`;
   const light = idx >= 2 ? 3 : idx === 1 ? 2 : tier >= 2 ? 1 : 0;
   $('lightGap').className = `light-gap${light ? ' l' + light : ''}`;
 }
@@ -226,7 +280,10 @@ function renderHistory() {
   list.innerHTML = game.history
     .map((h, i) => {
       const prev = i ? game.history[i - 1].door : 'CLOSED';
-      return `<li><b>${h.turn}.</b>${esc(ACTIONS[h.action].short)}${h.text ? ` <span class="muted">“${esc(h.text.slice(0, 10))}${h.text.length > 10 ? '…' : ''}”</span>` : ''}<span class="dot${prev !== h.door ? ' door' : ''}"></span></li>`;
+      const moved = prev !== h.door;
+      const back = ORDER.indexOf(h.door) < ORDER.indexOf(prev);
+      const sub = h.text ? ` <em>“${esc(h.text.slice(0, 14))}${h.text.length > 14 ? '…' : ''}”</em>` : h.actionLabel.includes('(') ? ` <em>${esc(h.actionLabel.split('(')[1].replace(')', ''))}</em>` : '';
+      return `<li><span class="t-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><span class="t-txt">${esc(ACTIONS[h.action].short)}${sub}</span>${moved ? `<span class="t-door${back ? ' back' : ''}">${DOOR[h.door].label}</span>` : ''}</li>`;
     })
     .join('');
   list.scrollTop = list.scrollHeight;
@@ -243,30 +300,32 @@ function setBubble(line, typing = false) {
 }
 function setNarration(text) {
   const el = $('narration');
-  el.classList.remove('in');
-  void el.offsetWidth;
+  el.hidden = !text;
   el.textContent = text;
-  el.classList.add('in');
+  replay(el, 'in');
 }
-function replay(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
 function animateAction(action) {
   const door = $('door');
   const gift = $('giftOnMat');
   if (gift.classList.contains('on') && action !== 'gift') gift.className = 'gift-on-mat';
-  if (action === 'knock') { replay(door, 'knock'); replay($('knockRing'), 'go'); }
+  if (action === 'knock') { replay(door, 'knock'); replay($('knockRing'), 'go'); replay($('hanger'), 'swing'); }
   if (action === 'letter') replay($('letterFly'), 'go');
   if (action === 'gift') { gift.className = 'gift-on-mat'; void gift.offsetWidth; gift.classList.add('on'); }
 }
 
+function setBusy(on) {
+  ui.busy = on;
+  $('app').classList.toggle('busy', on);
+}
+
 async function play(action, text = '', extra = {}) {
   if (ui.busy || !game || game.over) return;
-  ui.busy = true;
-  document.getElementById('app').classList.add('busy');
+  setBusy(true);
   closeSub();
   animateAction(action);
   setBubble('', true);
-  setNarration(action === 'wait' ? '문 앞에 조용히 기다린다…' : '문 너머의 반응을 기다린다…');
+  setNarration(action === 'wait' ? '문 앞에 가만히 앉아 기다린다…' : '문 너머의 반응을 기다린다…');
 
   const prevDoor = game.door;
   const local = localTurn(game, action, text, extra);
@@ -274,32 +333,29 @@ async function play(action, text = '', extra = {}) {
   const started = Date.now();
   if (usingAI()) {
     try {
-      const ai = await api('api/turn', { npc: npcPayload(), history: historyPayload(), action: { type: action, label: ACTIONS[action].label + (extra.gift ? ` (${extra.gift})` : ''), text }, state: { door: game.door, hurt: game.hurt, trust: game.trust } });
-      out = { ...ai, tag: local.tag, cat: local.cat };
+      const label = ACTIONS[action].label + (extra.gift ? ` (${extra.gift})` : '');
+      const ai = await api('api/turn', { npc: npcPayload(), history: historyPayload(), action: { type: action, label, text }, state: { door: game.door, hurt: game.hurt, trust: game.trust } });
+      out = { ...ai, tag: local.tag, cat: local.cat, sincere: local.sincere };
     } catch (err) {
-      toast(`AI 응답 실패: ${err.message} · 로컬 반응으로 대체합니다.`);
+      toast(`AI 응답 실패: ${err.message} · 로컬 반응으로 대체했어요.`);
     }
   }
-  const minWait = action === 'wait' ? 1600 : action === 'letter' ? 1500 : 900;
+  const minWait = action === 'wait' ? 1700 : action === 'letter' ? 1500 : 950;
   await sleep(Math.max(0, minWait - (Date.now() - started)));
 
   const entry = commitTurn(game, action, text, extra, out);
   setBubble(entry.npcLine);
   setNarration(entry.narration || '');
-  if (action === 'gift') {
-    const good = (out.cat || '').startsWith('giftGood') || entry.dw > 2;
-    if (good) setTimeout(() => $('giftOnMat').classList.add('taken'), 900);
-  }
-  const order = ['CLOSED', 'AJAR', 'UNLOCKED', 'OPEN'];
-  if (order.indexOf(entry.door) < order.indexOf(prevDoor)) replay($('door'), 'slam');
-  if (entry.door === 'UNLOCKED' && prevDoor !== 'UNLOCKED') { $('door').classList.add('turn'); setTimeout(() => $('door').classList.remove('turn'), 600); }
+  if (action === 'gift' && ((out.cat || '') === 'giftGood' || entry.dw > 2)) setTimeout(() => $('giftOnMat').classList.add('taken'), 900);
+  if (ORDER.indexOf(entry.door) < ORDER.indexOf(prevDoor)) replay($('door'), 'slam');
+  if (entry.door === 'UNLOCKED' && prevDoor !== 'UNLOCKED') { $('door').classList.add('turn'); setTimeout(() => $('door').classList.remove('turn'), 650); }
+  $('tip').innerHTML = TIPS[entry.tag] || $('tip').innerHTML;
   renderStatus();
   renderHistory();
 
   if (game.over) await openDoor();
-  ui.busy = false;
-  document.getElementById('app').classList.remove('busy');
-  if (!game.over && action === 'free') $('directInput').focus();
+  setBusy(false);
+  if (!game.over && (action === 'free' || action === 'act')) $('directInput').focus();
 }
 
 async function openDoor() {
@@ -308,20 +364,23 @@ async function openDoor() {
   if (ui.image) { $('roomImg').src = ui.image; $('roomImg').hidden = false; }
   else $('roomPlaceholder').hidden = false;
   door.classList.add('turn');
-  await sleep(350);
+  await sleep(380);
   door.classList.remove('ajar');
   door.classList.add('open');
-  document.querySelector('.frame').classList.add('revealed');
+  $('hanger').hidden = true;
+  $('frame').classList.add('revealed');
+  $('spill').classList.add('on');
   $('lightGap').className = 'light-gap l3';
+  $('stage').dataset.tier = '4';
 
   let result = null;
   const started = Date.now();
   if (usingAI()) {
     try { result = await api('api/result', { npc: npcPayload(), history: historyPayload() }); }
-    catch (err) { toast(`결과 생성 실패: ${err.message} · 로컬 결과를 보여 줍니다.`); }
+    catch (err) { toast(`결과 생성 실패: ${err.message} · 로컬 결과를 보여 줄게요.`); }
   }
   if (!result) result = localResult(game);
-  await sleep(Math.max(0, 2600 - (Date.now() - started)));
+  await sleep(Math.max(0, 2800 - (Date.now() - started)));
   showResult(result);
 }
 
@@ -332,6 +391,7 @@ function showResult(r) {
   $('resTries').textContent = `${game.history.length}회`;
   $('resEmotion').textContent = r.final_emotion;
   $('resType').textContent = r.reconciliation_type;
+  $('resSeal').className = `seal ${{ '완전한 화해': 'full', '조건부 화해': 'conditional', '어색한 화해': 'awkward' }[r.reconciliation_type] || 'full'}`;
   $('resNote').textContent = r.reconciliation_note;
   $('resDecisive').textContent = r.decisive_moment;
   $('resJourney').innerHTML = (r.inner_journey || []).map((s) => `<li>${esc(s)}</li>`).join('');
@@ -344,7 +404,10 @@ function showResult(r) {
 function buildActions() {
   const list = $('actionList');
   list.innerHTML = ['knock', 'letter', 'talk', 'gift', 'wait']
-    .map((k) => `<button type="button" class="action" data-action="${k}">${icon(ACTIONS[k].icon)}<span>${ACTIONS[k].label}</span><kbd>${ACTIONS[k].key}</kbd></button>`)
+    .map((k) => {
+      const a = ACTIONS[k];
+      return `<button type="button" class="action" data-action="${k}" data-tone="${a.tone}"><span class="a-ic">${icon(a.icon)}</span><span class="a-txt"><b>${a.label}</b><em>${a.desc}</em></span><kbd>${a.key}</kbd></button>`;
+    })
     .join('');
   list.addEventListener('click', (e) => { const b = e.target.closest('.action'); if (b) chooseAction(b.dataset.action); });
 }
@@ -376,6 +439,13 @@ function closeSub() {
   document.querySelectorAll('.action').forEach((b) => b.classList.remove('active'));
 }
 
+function setMode(mode) {
+  ui.mode = mode;
+  document.querySelectorAll('#modeSeg button').forEach((b) => { const on = b.dataset.mode === mode; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+  $('directForm').classList.toggle('act', mode === 'act');
+  $('directInput').placeholder = mode === 'act' ? '문 앞에서 할 행동을 적어 보세요... (예: 문에 등을 기대고 앉는다)' : 'NPC에게 하고 싶은 말을 입력하세요...';
+}
+
 /* ---------- modals ---------- */
 function show(id) { $(id).hidden = false; }
 function hide(id) { $(id).hidden = true; }
@@ -385,19 +455,20 @@ function toast(msg) {
   t.textContent = msg;
   t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 3200);
+  toastTimer = setTimeout(() => (t.hidden = true), 3400);
 }
 
 function openLog() {
   const list = $('logList');
-  if (!game || !game.history.length) list.innerHTML = '<p class="muted">아직 기록이 없습니다.</p>';
+  if (!game || !game.history.length) list.innerHTML = '<p class="log-empty">아직 기록이 없어요.</p>';
   else
     list.innerHTML = game.history
-      .map((h) => `<div class="log-turn"><div class="t"><span>TRY ${pad(h.turn)}</span><span>${DOOR[h.door].label}</span></div>
-        <p class="pc">나 · ${esc(h.actionLabel)}${h.text ? ` — “${esc(h.text)}”` : ''}</p>
-        <p class="npc">${esc(npc.name)} · ${h.npcLine ? `“${esc(h.npcLine)}”` : '(침묵)'}</p>
+      .map((h) => `<div class="log-turn"><span class="t-ic" style="${toneStyle(h.action)}">${icon(ACTIONS[h.action].icon)}</span><div>
+        <div class="t"><span>TRY ${pad(h.turn)}</span><span>${DOOR[h.door].label}</span></div>
+        <p class="pc">${esc(h.actionLabel)}${h.text ? ` — ${h.action === 'act' ? `<i>${esc(h.text)}</i>` : `“${esc(h.text)}”`}` : ''}</p>
+        <p class="npc">${h.npcLine ? esc(h.npcLine) : '……'}</p>
         ${h.narration ? `<p class="nar">${esc(h.narration)}</p>` : ''}
-        ${game.over && h.thought ? `<p class="think">속마음 · ${esc(h.thought)}</p>` : ''}</div>`)
+        ${game.over && h.thought ? `<p class="think">속마음 · ${esc(h.thought)}</p>` : ''}</div></div>`)
       .join('');
   show('logModal');
   list.scrollTop = list.scrollHeight;
@@ -409,14 +480,15 @@ function bind() {
     const v = $('directInput').value.trim();
     if (!v) return;
     $('directInput').value = '';
-    play('free', v);
+    play(ui.mode === 'act' ? 'act' : 'free', v);
   });
+  $('modeSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setMode(b.dataset.mode); $('directInput').focus(); } });
   $('subpanel').addEventListener('click', (e) => {
     const say = e.target.closest('[data-say]');
     const gift = e.target.closest('[data-gift]');
     if (say) play('talk', say.dataset.say);
     if (gift) play('gift', '', { gift: gift.dataset.gift });
-    if (e.target.closest('[data-custom]')) { closeSub(); $('directInput').focus(); }
+    if (e.target.closest('[data-custom]')) { closeSub(); setMode('say'); $('directInput').focus(); }
   });
   $('subpanel').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -451,9 +523,11 @@ function bind() {
   rm.checked = store.get('reduceMotion', false);
   document.body.classList.toggle('reduce-motion', rm.checked);
   rm.addEventListener('change', () => { document.body.classList.toggle('reduce-motion', rm.checked); store.set('reduceMotion', rm.checked); });
-  const restart = () => { if (ui.busy) return; hide('settingsModal'); hide('resultModal'); hide('logModal'); startGame(); };
-  const reset = () => { if (ui.busy) return; hide('settingsModal'); hide('resultModal'); hide('logModal'); game = null; show('setup'); };
-  $('btnRestart').addEventListener('click', () => npc && restart());
+  const closeAll = () => ['settingsModal', 'resultModal', 'logModal', 'letterModal'].forEach(hide);
+  const restart = () => { if (ui.busy || !npc) return; closeAll(); startGame(); };
+  const reset = () => { if (ui.busy) return; closeAll(); game = null; show('setup'); };
+  $('btnRestart').addEventListener('click', restart);
+  $('btnRestartTop').addEventListener('click', restart);
   $('btnReset').addEventListener('click', reset);
   $('resAgain').addEventListener('click', restart);
   $('resNew').addEventListener('click', reset);

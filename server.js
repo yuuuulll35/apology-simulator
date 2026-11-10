@@ -139,7 +139,7 @@ ${transcript(history)}
 문: ${state.door} / hurt ${state.hurt} / trust ${state.trust} / ${history.length + 1}번째 시도
 
 # 이번 PC 행동
-${action.label}${action.text ? `\nPC가 한 말: """${action.text.slice(0, 600)}"""` : ''}
+${action.label}${action.text ? `\n${action.type === 'act' ? 'PC의 행동' : 'PC가 한 말'}: """${action.text.slice(0, 600)}"""` : ''}
 
 NPC의 반응을 JSON으로 출력하라.`;
   const out = await callJSON({ system: systemPrompt(npc), user, schema: TURN_SCHEMA, effort: 'low', maxTokens: 4000 });

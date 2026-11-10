@@ -6,173 +6,240 @@
   <title>CLOSED DOOR</title>
   <meta name="description" content="닫힌 문 너머의 NPC에게 사과하는 인터랙티브 사과 시뮬레이터" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app" id="app">
     <header class="topbar">
-      <h1 class="logo">CLOSED DOOR</h1>
-      <span class="pill-title">APOLOGY SIMULATOR</span>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><i></i></span>
+        <h1 class="logo">CLOSED DOOR</h1>
+      </div>
+      <span class="eyebrow-pill">APOLOGY SIMULATOR</span>
       <nav class="top-actions">
-        <button class="ghost-btn" id="btnLog" type="button"><span data-icon="list"></span>기록</button>
-        <button class="ghost-btn" id="btnSettings" type="button">SETTING <span data-icon="gear"></span></button>
+        <button class="top-btn" id="btnLog" type="button"><span data-icon="list"></span><span>기록</span></button>
+        <button class="top-btn" id="btnRestartTop" type="button"><span data-icon="rotate"></span><span>다시</span></button>
+        <button class="top-btn" id="btnSettings" type="button"><span>SETTING</span><span data-icon="gear" class="spin"></span></button>
       </nav>
     </header>
 
     <main class="board">
+      <!-- LEFT -->
       <section class="panel info" aria-label="게임 정보">
-        <h2 class="panel-label">GAME INFO</h2>
-        <div class="try">TRY <span id="tryCount">00</span></div>
-        <div class="npc-card">
-          <div class="npc-avatar" aria-hidden="true">?</div>
-          <div>
-            <div class="npc-name" id="npcName">-</div>
-            <div class="npc-rel" id="npcRel">-</div>
+        <div class="sec">
+          <h2 class="label">GAME INFO</h2>
+          <div class="try-row">
+            <div class="try"><small>TRY</small><span id="tryCount">00</span></div>
+            <div class="mood-face" id="moodFace" aria-hidden="true"></div>
+          </div>
+          <div class="npc-chip">
+            <span class="npc-initial" id="npcInitial">?</span>
+            <span class="npc-meta"><b id="npcName">-</b><em id="npcRel">-</em></span>
           </div>
         </div>
-        <hr />
-        <h3 class="panel-label">DOOR STATUS</h3>
-        <div class="door-progress" id="doorProgress" aria-hidden="true">
-          <i></i><i></i><i></i><i></i>
+
+        <div class="sec">
+          <h3 class="label">DOOR STATUS</h3>
+          <ol class="stepper" id="stepper">
+            <li data-step="0"><i></i><span>잠김</span></li>
+            <li data-step="1"><i></i><span>기댐</span></li>
+            <li data-step="2"><i></i><span>해제</span></li>
+            <li data-step="3"><i></i><span>열림</span></li>
+          </ol>
+          <div class="status-row">
+            <span class="badge locked" id="doorBadge">LOCKED</span>
+          </div>
         </div>
-        <span class="badge locked" id="doorBadge">LOCKED</span>
-        <h3 class="panel-label">NPC MOOD</h3>
-        <div class="mood" id="moodText">-</div>
-        <hr />
-        <div class="history-head">
-          <h3 class="panel-label">HISTORY</h3>
-          <button class="link-btn" id="btnLog2" type="button">전체 보기</button>
+
+        <div class="sec">
+          <h3 class="label">NPC MOOD</h3>
+          <div class="mood" id="moodText">-</div>
         </div>
-        <ol class="history" id="historyList"></ol>
+
+        <div class="sec grow">
+          <div class="sec-head">
+            <h3 class="label">HISTORY</h3>
+            <button class="text-btn" id="btnLog2" type="button">전체 보기</button>
+          </div>
+          <ol class="timeline" id="historyList"></ol>
+        </div>
       </section>
 
-      <section class="panel stage" aria-label="문">
+      <!-- CENTER -->
+      <section class="panel stage" id="stage" aria-label="문" data-tier="0">
         <div class="bubble" id="bubble" aria-live="polite">
-          <div class="bubble-name" id="bubbleName">NPC</div>
+          <div class="bubble-name"><span id="bubbleName">NPC</span></div>
           <p class="bubble-line" id="bubbleLine">"..."</p>
         </div>
+
         <div class="scene" id="scene">
           <div class="wall">
-            <div class="frame">
+            <div class="frame" id="frame">
+              <div class="sconce" aria-hidden="true"><i></i></div>
+              <div class="plant" aria-hidden="true"><i class="leaf a"></i><i class="leaf b"></i><i class="leaf c"></i><i class="pot"></i></div>
               <div class="room" id="room">
-                <div class="room-glow"></div>
+                <div class="room-light"></div>
                 <img id="roomImg" alt="" hidden />
                 <div class="room-placeholder" id="roomPlaceholder" hidden><span data-icon="user"></span></div>
               </div>
               <div class="door" id="door">
-                <div class="door-panel top"></div>
-                <div class="door-panel bottom"></div>
-                <div class="peephole"></div>
-                <div class="mail-slot"><div class="letter-fly" id="letterFly"></div></div>
-                <div class="lock-plate" id="lockPlate"><span data-icon="lock"></span></div>
-                <div class="knob"></div>
-                <div class="knock-ring" id="knockRing"></div>
+                <div class="door-face">
+                  <div class="nameplate" id="nameplate">-</div>
+                  <div class="peephole"></div>
+                  <div class="dpanel top"></div>
+                  <div class="mail-slot"><div class="letter-fly" id="letterFly"></div></div>
+                  <div class="dpanel bottom"></div>
+                  <div class="handle" id="handle">
+                    <span class="lock-dot" id="lockPlate"><span data-icon="lock"></span></span>
+                    <span class="knob"></span>
+                    <div class="hanger" id="hanger"><span id="hangerText">들어오지 마</span></div>
+                  </div>
+                  <div class="knock-ring" id="knockRing"></div>
+                </div>
+                <div class="door-edge"></div>
               </div>
-              <div class="light-gap" id="lightGap"></div>
             </div>
+          </div>
+          <div class="floor">
+            <div class="light-gap" id="lightGap"></div>
+            <div class="spill" id="spill"></div>
             <div class="mat"><div class="gift-on-mat" id="giftOnMat"></div></div>
           </div>
         </div>
         <p class="narration" id="narration">...문 너머는 조용하다.</p>
       </section>
 
+      <!-- RIGHT -->
       <section class="panel actions" aria-label="행동 선택">
-        <h2 class="panel-label">YOUR ACTION</h2>
+        <div class="sec-head">
+          <h2 class="label">YOUR ACTION</h2>
+          <span class="hint">1 – 5</span>
+        </div>
         <div class="action-list" id="actionList"></div>
         <div class="subpanel" id="subpanel" hidden></div>
+        <p class="tip" id="tip"></p>
       </section>
     </main>
 
-    <form class="direct" id="directForm" autocomplete="off">
-      <label class="panel-label" for="directInput">DIRECT INPUT</label>
-      <div class="direct-row">
-        <input id="directInput" maxlength="300" placeholder="NPC에게 하고 싶은 말이나 행동을 입력하세요..." />
+    <form class="composer" id="directForm" autocomplete="off">
+      <div class="composer-head">
+        <label class="label" for="directInput">DIRECT INPUT</label>
+        <div class="mode-seg" id="modeSeg" role="tablist" aria-label="입력 종류">
+          <button type="button" data-mode="say" class="on" role="tab" aria-selected="true"><span data-icon="chat"></span>대사</button>
+          <button type="button" data-mode="act" role="tab" aria-selected="false"><span data-icon="sparkle"></span>행동</button>
+        </div>
+      </div>
+      <div class="composer-row">
+        <input id="directInput" maxlength="300" placeholder="NPC에게 하고 싶은 말을 입력하세요..." />
         <button class="send" type="submit" aria-label="보내기"><span data-icon="send"></span></button>
       </div>
     </form>
   </div>
 
-  <!-- setup -->
+  <!-- SETUP -->
   <div class="overlay" id="setup" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
     <form class="sheet setup-sheet" id="setupForm">
-      <div class="sheet-head">
-        <span class="pill-title small">NEW GAME</span>
-        <h2 id="setupTitle">누가 문을 닫았나요?</h2>
-        <p class="muted">문 너머의 사람을 설정하세요. 사진은 문이 열리는 순간까지 공개되지 않습니다.</p>
-      </div>
-      <div class="setup-grid">
-        <div class="setup-col">
-          <div class="field two">
-            <label>이름<input name="name" required maxlength="12" placeholder="예: 하윤" /></label>
-            <label>나를 부르는 호칭<input name="callName" maxlength="10" placeholder="예: 너, 선배" /></label>
+      <aside class="setup-aside">
+        <div class="aside-top">
+          <span class="eyebrow-pill small">NEW GAME</span>
+          <h2 id="setupTitle">누가 문을<br />닫았나요?</h2>
+          <p>문 너머의 사람을 정해 주세요. 그 사람의 마음은 당신의 사과에 따라 움직입니다.</p>
+        </div>
+        <label class="drop" id="drop">
+          <input type="file" accept="image/*" id="imgInput" hidden />
+          <div class="mini-door">
+            <div class="mini-plate" id="miniPlate">이름</div>
+            <div class="mini-knob"></div>
+          </div>
+          <div class="drop-inner" id="dropInner">
+            <span data-icon="image"></span>
+            <strong>문 뒤에 숨길 사진</strong>
+            <span>클릭하거나 끌어다 놓기 · 선택</span>
+          </div>
+          <div class="drop-secret" id="dropSecret" hidden>
+            <span data-icon="lock"></span>
+            <strong>문 뒤에 숨겼어요</strong>
+            <span id="fileName"></span>
+            <button type="button" class="text-btn" id="imgClear">지우기</button>
+          </div>
+        </label>
+        <p class="aside-note">사진은 이 브라우저 안에서만 쓰이며, 문이 열리는 순간에만 공개됩니다.</p>
+      </aside>
+
+      <div class="setup-main">
+        <div class="setup-sec">
+          <h3><b>01</b>문 너머의 사람</h3>
+          <div class="grid2">
+            <label class="field"><span>이름</span><input name="name" required maxlength="12" placeholder="하윤" /></label>
+            <label class="field"><span>나를 부르는 호칭</span><input name="callName" maxlength="10" placeholder="너, 선배, 자기" /></label>
           </div>
           <div class="field">
-            <span class="field-label">관계</span>
+            <span>관계</span>
             <div class="chips" id="relChips"></div>
           </div>
           <div class="field">
-            <span class="field-label">성격</span>
+            <span>성격</span>
             <div class="pers-grid" id="persGrid"></div>
           </div>
-          <label class="field">무슨 일이 있었나요?
-            <textarea name="incident" rows="2" maxlength="200" placeholder="예: 생일 약속을 잊고 친구들과 놀러 갔다"></textarea>
+        </div>
+
+        <div class="setup-sec">
+          <h3><b>02</b>무슨 일이 있었나요</h3>
+          <label class="field"><span>다툰 이유</span>
+            <textarea name="incident" rows="2" maxlength="200" placeholder="기념일 약속을 잊고 친구들과 놀러 갔다"></textarea>
           </label>
-          <div class="field two">
-            <label>좋아하는 것<input name="likes" maxlength="40" placeholder="예: 딸기 케이크, 고양이" /></label>
-            <label><span class="lbl">상처의 깊이 <output id="sevOut">보통</output></span>
-              <input type="range" name="severity" min="1" max="5" value="3" />
-            </label>
+          <div class="grid2">
+            <label class="field"><span>좋아하는 것 <em>선물 판정에 쓰여요</em></span><input name="likes" maxlength="40" placeholder="딸기 케이크, 고양이" /></label>
+            <div class="field">
+              <span>상처의 깊이 <output id="sevOut">보통</output></span>
+              <div class="sev" id="sevPick"></div>
+              <input type="hidden" name="severity" value="3" />
+            </div>
           </div>
-          <label class="field"><span class="lbl">성격 메모 <em class="muted">(AI 모드에서 반영)</em></span>
-            <input name="personalityNote" maxlength="120" placeholder="예: 겉으로는 쿨한 척, 혼자 있으면 운다" />
+          <label class="field"><span>성격 메모 <em>AI 모드에서 반영</em></span>
+            <input name="personalityNote" maxlength="120" placeholder="겉으로는 쿨한 척, 혼자 있으면 운다" />
           </label>
         </div>
-        <div class="setup-col">
-          <span class="field-label">NPC 이미지 <em class="muted">(선택)</em></span>
-          <label class="drop" id="drop">
-            <input type="file" accept="image/*" id="imgInput" hidden />
-            <div class="drop-inner" id="dropInner">
-              <span data-icon="image"></span>
-              <strong>이미지 업로드</strong>
-              <span class="muted">클릭하거나 끌어다 놓기</span>
-            </div>
-            <div class="drop-secret" id="dropSecret" hidden>
-              <span data-icon="lock"></span>
-              <strong>비공개로 등록됨</strong>
-              <span class="muted" id="fileName"></span>
-              <button type="button" class="link-btn" id="imgClear">지우기</button>
-            </div>
-          </label>
-          <p class="muted tiny">이미지는 이 브라우저 안에서만 쓰이고 서버로 전송되지 않습니다.</p>
+
+        <div class="setup-foot">
           <div class="engine-note" id="engineNote"></div>
           <div class="setup-buttons">
             <button type="button" class="btn ghost" id="btnSample">예시로 채우기</button>
-            <button type="submit" class="btn primary">문 앞으로 가기</button>
+            <button type="submit" class="btn primary">문 앞으로 가기 <span data-icon="arrow"></span></button>
           </div>
         </div>
       </div>
     </form>
   </div>
 
-  <!-- letter -->
+  <!-- LETTER -->
   <div class="overlay" id="letterModal" hidden role="dialog" aria-modal="true" aria-labelledby="letterTitle">
     <form class="sheet letter-sheet" id="letterForm">
-      <h2 id="letterTitle">편지 쓰기</h2>
-      <p class="muted">문 아래 틈으로 넣을 편지입니다. 진심을 담아 써 보세요.</p>
-      <div class="paper"><textarea id="letterText" maxlength="500" rows="8" placeholder="To. ..." required></textarea></div>
+      <div class="envelope-flap" aria-hidden="true"></div>
+      <div class="letter-head">
+        <h2 id="letterTitle">편지 쓰기</h2>
+        <p>문 아래 틈으로 밀어 넣을 편지예요. 할 말을 천천히 적어 보세요.</p>
+      </div>
+      <div class="paper">
+        <div class="paper-to" id="letterTo">To.</div>
+        <textarea id="letterText" maxlength="500" rows="7" required></textarea>
+      </div>
       <div class="row-end">
-        <span class="muted tiny" id="letterCount">0 / 500</span>
+        <span class="count" id="letterCount">0 / 500</span>
         <button type="button" class="btn ghost" data-close>취소</button>
         <button type="submit" class="btn primary">문틈에 넣기</button>
       </div>
     </form>
   </div>
 
-  <!-- log -->
+  <!-- LOG -->
   <div class="overlay" id="logModal" hidden role="dialog" aria-modal="true" aria-labelledby="logTitle">
     <div class="sheet log-sheet">
-      <div class="row-between">
+      <div class="sheet-bar">
         <h2 id="logTitle">대화 기록</h2>
         <button type="button" class="icon-btn" data-close aria-label="닫기"><span data-icon="x"></span></button>
       </div>
@@ -180,68 +247,75 @@
     </div>
   </div>
 
-  <!-- settings -->
+  <!-- SETTINGS -->
   <div class="overlay" id="settingsModal" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="sheet settings-sheet">
-      <div class="row-between">
+      <div class="sheet-bar">
         <h2 id="setTitle">설정</h2>
         <button type="button" class="icon-btn" data-close aria-label="닫기"><span data-icon="x"></span></button>
       </div>
-      <div class="field">
-        <span class="field-label">NPC 반응 엔진</span>
+      <div class="set-group">
+        <span class="set-label">NPC 반응 엔진</span>
         <div class="seg" id="engineSeg">
           <button type="button" data-engine="auto">자동</button>
           <button type="button" data-engine="ai">AI</button>
           <button type="button" data-engine="local">로컬</button>
         </div>
-        <p class="muted tiny" id="engineStatus"></p>
+        <p class="set-desc" id="engineStatus"></p>
       </div>
-      <label class="toggle"><input type="checkbox" id="reduceMotion" /> 애니메이션 줄이기</label>
-      <div class="settings-buttons">
-        <button type="button" class="btn ghost" id="btnRestart">같은 NPC로 다시 시작</button>
-        <button type="button" class="btn danger" id="btnReset">초기화 (새 NPC)</button>
+      <label class="switch-row">
+        <span><b>애니메이션 줄이기</b><em>문 흔들림, 전환 효과를 최소화합니다</em></span>
+        <input type="checkbox" id="reduceMotion" class="switch" />
+      </label>
+      <div class="set-buttons">
+        <button type="button" class="btn ghost" id="btnRestart"><span data-icon="rotate"></span>같은 사람에게 다시 사과하기</button>
+        <button type="button" class="btn danger" id="btnReset"><span data-icon="trash"></span>초기화하고 새로 만들기</button>
       </div>
     </div>
   </div>
 
-  <!-- result -->
+  <!-- RESULT -->
   <div class="overlay result" id="resultModal" hidden role="dialog" aria-modal="true" aria-labelledby="resultTitle">
     <div class="sheet result-sheet">
       <div class="result-left">
         <div class="polaroid">
+          <span class="tape" aria-hidden="true"></span>
           <div class="polaroid-img" id="resultImg"></div>
           <div class="polaroid-cap" id="resultName"></div>
         </div>
-        <div class="stat-row">
+        <div class="stats">
           <div class="stat"><span>총 시도</span><strong id="resTries">0</strong></div>
-          <div class="stat"><span>최종 감정</span><strong id="resEmotion">-</strong></div>
+          <div class="stat wide"><span>최종 감정</span><strong id="resEmotion">-</strong></div>
         </div>
       </div>
       <div class="result-right">
-        <span class="pill-title small">THE DOOR IS OPEN</span>
-        <h2 id="resultTitle"><span id="resType">완전한 화해</span></h2>
-        <p class="muted" id="resNote"></p>
+        <div class="result-head">
+          <span class="eyebrow-pill small sage">THE DOOR IS OPEN</span>
+          <div class="seal" id="resSeal"><span id="resType">완전한 화해</span></div>
+          <p class="result-note" id="resNote"></p>
+        </div>
+        <h2 class="sr-only" id="resultTitle">결과</h2>
         <div class="res-block">
-          <h3>결정적 계기</h3>
+          <h3><span data-icon="key"></span>결정적 계기</h3>
           <p id="resDecisive"></p>
         </div>
         <div class="res-block">
-          <h3>내면심리 변화</h3>
+          <h3><span data-icon="wave"></span>내면심리 변화</h3>
           <ol class="journey" id="resJourney"></ol>
         </div>
         <div class="res-two">
           <div class="res-block">
-            <h3>문을 열기 직전</h3>
+            <h3><span data-icon="door"></span>문을 열기 직전</h3>
             <p class="quote" id="resLast"></p>
           </div>
-          <div class="res-block accent">
-            <h3>하고 싶은 말</h3>
+          <div class="res-block note">
+            <h3><span data-icon="mail"></span>하고 싶은 말</h3>
             <p class="quote" id="resMsg"></p>
           </div>
         </div>
         <div class="row-end">
           <button type="button" class="btn ghost" id="resLog">기록 보기</button>
-          <button type="button" class="btn ghost" id="resNew">새 NPC</button>
+          <button type="button" class="btn ghost" id="resNew">새 사람</button>
           <button type="button" class="btn primary" id="resAgain">다시 하기</button>
         </div>
       </div>
