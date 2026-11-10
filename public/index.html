@@ -276,7 +276,25 @@
       </section>
     </main>
 
-    <!-- COMPOSER -->
+    <!-- COMPOSER / OOC -->
+    <div class="dock">
+    <div class="ooc-bar" id="oocBar" hidden>
+      <div class="ooc-step">
+        <span class="ooc-num">1</span>
+        <div class="ooc-meta"><b id="oocTitle">1턴 OOC</b><em id="oocSub">노크하기 · 0자</em></div>
+        <button type="button" class="btn primary" id="oocCopy"><span data-icon="copy"></span><span id="oocCopyLabel">OOC 복사</span></button>
+        <button type="button" class="btn icon-only" id="oocView" title="OOC 내용 보기" aria-label="OOC 내용 보기"><span data-icon="eye"></span></button>
+      </div>
+      <span class="ooc-arrow" aria-hidden="true"><span data-icon="arrow"></span></span>
+      <div class="ooc-step grow">
+        <span class="ooc-num">2</span>
+        <textarea id="oocPaste" rows="2" placeholder="AI 채팅에서 받은 답을 통째로 붙여넣으세요. 붙여넣으면 바로 읽어요."></textarea>
+        <button type="button" class="btn" id="oocApply">반영</button>
+      </div>
+      <button type="button" class="btn ghost-sm" id="oocSkip" hidden>내장 결과로 보기</button>
+      <button type="button" class="close-x inline" id="oocCancel" title="이번 행동 취소" aria-label="이번 행동 취소"><span data-icon="x"></span></button>
+      <div class="ooc-err" id="oocErr" hidden></div>
+    </div>
     <form class="composer" id="directForm" autocomplete="off">
       <div class="mode-tabs" id="modeSeg" role="tablist" aria-label="입력 종류">
         <button type="button" data-mode="say" class="on" role="tab" aria-selected="true"><span data-icon="chat"></span>대사</button>
@@ -286,6 +304,21 @@
       <input id="directInput" maxlength="300" placeholder="NPC에게 하고 싶은 말을 입력하세요..." />
       <button class="send" type="submit" aria-label="보내기"><span data-icon="send"></span></button>
     </form>
+    </div>
+  </div>
+
+  <!-- PROMPT VIEW -->
+  <div class="overlay" id="promptModal" hidden role="dialog" aria-modal="true" aria-labelledby="promptTitle">
+    <div class="sheet prompt-sheet">
+      <h2 class="sheet-ribbon sky" id="promptTitle">OOC</h2>
+      <button type="button" class="close-x" data-close aria-label="닫기"><span data-icon="x"></span></button>
+      <p class="sheet-desc">아래 내용을 그대로 AI 채팅에 보내세요. 복사가 안 되면 글을 길게 눌러 전체 선택하세요.</p>
+      <textarea class="prompt-text" id="promptText" readonly></textarea>
+      <div class="row-end">
+        <span class="count" id="promptCount"></span>
+        <button type="button" class="btn primary" id="promptCopy"><span data-icon="copy"></span>복사</button>
+      </div>
+    </div>
   </div>
 
   <!-- SETUP -->
@@ -322,17 +355,32 @@
       </aside>
 
       <div class="setup-main">
+        <div class="play-mode" id="playMode" role="radiogroup" aria-label="플레이 방식">
+          <button type="button" class="pm" data-engine="ooc" role="radio" aria-checked="true">
+            <span class="pm-ic" data-icon="chat"></span>
+            <span><strong>OOC로 플레이 <i>추천</i></strong><span>AI 채팅에 OOC를 보내고 받은 답으로 진행해요. 캐릭터 설정은 AI가 알고 있어요.</span></span>
+          </button>
+          <button type="button" class="pm" data-engine="local" role="radio" aria-checked="false">
+            <span class="pm-ic" data-icon="sparkle"></span>
+            <span><strong>바로 플레이</strong><span>내장 NPC가 반응해요. 성격과 관계를 직접 정해요.</span></span>
+          </button>
+        </div>
+        <div class="resume" id="resumeBox" hidden>
+          <span data-icon="rotate"></span><span id="resumeText">진행 중인 사과가 있어요.</span>
+          <button type="button" class="btn small" id="btnResume">이어서 하기</button>
+        </div>
+
         <fieldset class="setup-sec">
           <legend><b>1</b>문 너머의 사람</legend>
           <div class="grid2">
-            <label class="field"><span>이름</span><input name="name" required maxlength="12" placeholder="하윤" /></label>
-            <label class="field"><span>나를 부르는 호칭</span><input name="callName" maxlength="10" placeholder="너, 선배, 자기" /></label>
+            <label class="field"><span>NPC 이름</span><input name="name" required maxlength="12" placeholder="하윤" /></label>
+            <label class="field"><span>내 이름 <em>PC</em></span><input name="pcName" maxlength="12" placeholder="도윤" /></label>
           </div>
-          <div class="field">
+          <div class="field local-only">
             <span>관계</span>
             <div class="chips" id="relChips"></div>
           </div>
-          <div class="field">
+          <div class="field local-only">
             <span>성격</span>
             <div class="pers-grid" id="persGrid"></div>
           </div>
@@ -340,10 +388,10 @@
 
         <fieldset class="setup-sec">
           <legend><b>2</b>무슨 일이 있었나요</legend>
-          <label class="field"><span>다툰 이유</span>
-            <textarea name="incident" rows="2" maxlength="200" placeholder="기념일 약속을 잊고 친구들과 놀러 갔다"></textarea>
+          <label class="field"><span>다툰 이유 <em class="ooc-only">비워 두면 AI가 서사 속 가장 그럴듯한 갈등으로 정해요</em></span>
+            <textarea name="incident" rows="2" maxlength="120" placeholder="기념일 약속을 잊고 친구들과 놀러 갔다"></textarea>
           </label>
-          <div class="grid2">
+          <div class="grid2 local-only">
             <label class="field"><span>좋아하는 것 <em>선물 판정</em></span><input name="likes" maxlength="40" placeholder="딸기 케이크, 고양이" /></label>
             <div class="field">
               <span>상처의 깊이 <output id="sevOut">보통</output></span>
@@ -351,9 +399,7 @@
               <input type="hidden" name="severity" value="3" />
             </div>
           </div>
-          <label class="field"><span>성격 메모 <em>AI 모드에서 반영</em></span>
-            <input name="personalityNote" maxlength="120" placeholder="겉으로는 쿨한 척, 혼자 있으면 운다" />
-          </label>
+          <input type="hidden" name="personalityNote" />
         </fieldset>
 
         <div class="setup-foot">
@@ -372,11 +418,11 @@
       <p class="sheet-desc">문 아래 틈으로 밀어 넣을 편지예요. 할 말을 천천히 적어 보세요.</p>
       <div class="paper">
         <div class="paper-to" id="letterTo">To.</div>
-        <textarea id="letterText" maxlength="500" rows="7" required></textarea>
+        <textarea id="letterText" maxlength="400" rows="7" required></textarea>
         <div class="paper-stamp" aria-hidden="true"><span data-icon="heart"></span></div>
       </div>
       <div class="row-end">
-        <span class="count" id="letterCount">0 / 500</span>
+        <span class="count" id="letterCount">0 / 400</span>
         <button type="button" class="btn" data-close>취소</button>
         <button type="submit" class="btn primary">문틈에 넣기 <span data-icon="send"></span></button>
       </div>
@@ -400,9 +446,9 @@
       <div class="set-group">
         <span class="set-label">NPC 반응 엔진</span>
         <div class="seg" id="engineSeg">
-          <button type="button" data-engine="auto">자동</button>
-          <button type="button" data-engine="ai">AI</button>
-          <button type="button" data-engine="local">로컬</button>
+          <button type="button" data-engine="ooc">OOC</button>
+          <button type="button" data-engine="local">바로 플레이</button>
+          <button type="button" data-engine="ai">AI 서버</button>
         </div>
         <p class="set-desc" id="engineStatus"></p>
       </div>

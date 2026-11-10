@@ -1,5 +1,6 @@
 import { ACTIONS, DOOR, RELATIONS, PERSONALITIES, HANGER } from './data.js';
 import { createGame, localTurn, commitTurn, localResult, moodTier } from './engine.js';
+import { buildTurnPrompt, buildResultPrompt, parseTurn, parseResult, INPUT_LIMIT } from './ooc.js';
 
 const ICONS = {
   hand: '<path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
@@ -22,6 +23,9 @@ const ICONS = {
   trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
   key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
   wave: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
   book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
   ear: '<path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"/><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"/>',
   eyeoff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61M2 2l20 20"/>',
@@ -81,13 +85,13 @@ const TIPS = {
   '생각할 시간': '<b>TIP</b> 진심을 전한 뒤의 기다림은 생각할 시간을 줘요.',
 };
 const SAMPLE = {
-  name: '하윤', callName: '너', relation: '연인', personality: 'tsun', severity: 3,
+  name: '하윤', pcName: '도윤', callName: '너', relation: '연인', personality: 'tsun', severity: 3,
   incident: '기념일 저녁 약속을 잊고 친구들과 늦게까지 놀다가 연락도 안 했다',
   likes: '딸기 케이크, 고양이',
   personalityNote: '자존심이 세서 먼저 풀리는 척은 절대 안 한다',
 };
 
-const ui = { engine: store.get('engine', 'auto'), aiAvailable: false, busy: false, sub: null, image: null, imageName: '', mode: 'say' };
+const ui = { engine: ({ auto: 'ooc' }[store.get('engine', 'ooc')] || store.get('engine', 'ooc')), pending: null, aiAvailable: false, busy: false, sub: null, image: null, imageName: '', mode: 'say' };
 let npc = null;
 let game = null;
 
@@ -104,21 +108,34 @@ async function checkHealth() {
   }
   renderEngine();
 }
-const usingAI = () => ui.aiAvailable && ui.engine !== 'local';
+const usingAI = () => ui.aiAvailable && ui.engine === 'ai';
+const usingOOC = () => ui.engine === 'ooc' || (ui.engine === 'ai' && !ui.aiAvailable);
 
 function renderEngine() {
   const note = $('engineNote');
-  note.classList.toggle('ai', usingAI());
-  note.innerHTML = usingAI()
-    ? '<span><b>AI 모드</b> · 설정을 바탕으로 매번 새롭게 반응해요.</span>'
-    : ui.aiAvailable
-      ? '<span><b>로컬 모드</b> · 설정에서 AI 모드로 바꿀 수 있어요.</span>'
-      : '<span><b>로컬 모드</b> · 내장 엔진이 반응해요.</span>';
-  $('engineStatus').textContent = ui.aiAvailable ? 'AI 서버에 연결되어 있어요.' : 'AI 서버를 찾지 못했어요. 로컬 엔진만 사용할 수 있어요.';
-  document.querySelectorAll('#engineSeg button').forEach((b) => {
-    b.classList.toggle('on', b.dataset.engine === ui.engine);
-    b.disabled = b.dataset.engine === 'ai' && !ui.aiAvailable;
+  note.classList.toggle('ai', usingOOC() || usingAI());
+  note.innerHTML = usingOOC()
+    ? '<span><b>OOC 모드</b> · 행동마다 OOC를 복사해 AI 채팅에 보내요.</span>'
+    : usingAI()
+      ? '<span><b>AI 서버 모드</b> · 서버의 AI가 바로 반응해요.</span>'
+      : '<span><b>바로 플레이</b> · 내장 NPC가 반응해요.</span>';
+  $('engineStatus').textContent = usingOOC()
+    ? '행동을 고르면 OOC 복사 → AI 답변 붙여넣기 순서로 턴이 진행돼요.'
+    : ui.aiAvailable ? 'AI 서버에 연결되어 있어요.' : '내장 NPC가 설정한 성격대로 반응해요.';
+  document.querySelectorAll('#engineSeg button, #playMode .pm').forEach((b) => {
+    const on = b.dataset.engine === ui.engine;
+    b.classList.toggle('on', on);
+    if (b.classList.contains('pm')) b.setAttribute('aria-checked', String(on));
+    if (b.dataset.engine === 'ai') { b.disabled = !ui.aiAvailable; b.hidden = !ui.aiAvailable; }
   });
+  $('setupForm').classList.toggle('mode-ooc', usingOOC());
+}
+
+function setEngine(engine) {
+  if (ui.pending) return toast('진행 중인 OOC를 마치거나 취소한 뒤 바꿀 수 있어요.');
+  ui.engine = engine;
+  store.set('engine', engine);
+  renderEngine();
 }
 
 async function api(path, body) {
@@ -164,7 +181,7 @@ function buildSetup() {
   form.elements.name.addEventListener('input', syncPlate);
 
   const fill = (d) => {
-    for (const k of ['name', 'callName', 'incident', 'likes', 'personalityNote']) if (d[k] != null) form.elements[k].value = d[k];
+    for (const k of ['name', 'pcName', 'incident', 'likes', 'personalityNote']) if (d[k] != null) form.elements[k].value = d[k];
     setChoice(rel, 'rel', d.relation || '연인');
     setChoice(pers, 'pers', d.personality || 'tsun');
     setSeverity(Number(d.severity) || 3);
@@ -200,7 +217,7 @@ function buildSetup() {
     const f = form.elements;
     npc = {
       name: f.name.value.trim() || '그 사람',
-      callName: f.callName.value.trim(),
+      pcName: f.pcName.value.trim(),
       relation: rel.querySelector('[aria-pressed="true"]')?.dataset.rel || '친구',
       personality: pers.querySelector('[aria-pressed="true"]')?.dataset.pers || 'tsun',
       severity: Number(f.severity.value) || 3,
@@ -212,12 +229,16 @@ function buildSetup() {
     hide('setup');
     startGame();
   });
+  $('playMode').addEventListener('click', (e) => { const b = e.target.closest('.pm'); if (b) setEngine(b.dataset.engine); });
+  $('btnResume').addEventListener('click', resumeSession);
+  syncResume();
 }
 
 /* ---------- game ---------- */
 function startGame() {
   game = createGame(npc);
   closeSub();
+  hideOoc();
   $('frame').classList.remove('revealed');
   svgShow($('roomImg'), false);
   $('roomImg').removeAttribute('href');
@@ -237,6 +258,7 @@ function startGame() {
   renderStatus(false);
   renderHistory();
   hide('resultModal');
+  saveSession();
 }
 
 function renderStatus(animate = true) {
@@ -333,15 +355,25 @@ function setBusy(on) {
 }
 
 async function play(action, text = '', extra = {}) {
-  if (ui.busy || !game || game.over) return;
-  setBusy(true);
+  if (ui.busy || ui.pending || !game || game.over) return;
   closeSub();
   animateAction(action);
   setBubble('', true);
-  setNarration(action === 'wait' ? '문 앞에 가만히 앉아 기다린다…' : '문 너머의 반응을 기다린다…');
-
   const prevDoor = game.door;
   const local = localTurn(game, action, text, extra);
+
+  if (usingOOC()) {
+    const label = ACTIONS[action].label + (extra.gift ? ` (${extra.gift})` : '');
+    const prompt = buildTurnPrompt({ npc, history: game.history, state: { door: game.door, hurt: game.hurt, trust: game.trust }, action: { type: action, label, text } });
+    setNarration(action === 'wait' ? '문 앞에 가만히 앉아 기다린다… AI 채팅에서 반응을 받아 와 주세요.' : 'AI 채팅에 OOC를 보내고, 받은 답을 아래에 붙여넣어 주세요.');
+    ui.pending = { kind: 'turn', action, text, extra, local, prevDoor, prompt, title: `${game.history.length + 1}턴 OOC`, sub: label };
+    showOoc();
+    saveSession();
+    return;
+  }
+
+  setBusy(true);
+  setNarration(action === 'wait' ? '문 앞에 가만히 앉아 기다린다…' : '문 너머의 반응을 기다린다…');
   let out = local;
   const started = Date.now();
   if (usingAI()) {
@@ -350,12 +382,17 @@ async function play(action, text = '', extra = {}) {
       const ai = await api('api/turn', { npc: npcPayload(), history: historyPayload(), action: { type: action, label, text }, state: { door: game.door, hurt: game.hurt, trust: game.trust } });
       out = { ...ai, tag: local.tag, cat: local.cat, sincere: local.sincere };
     } catch (err) {
-      toast(`AI 응답 실패: ${err.message} · 로컬 반응으로 대체했어요.`);
+      toast(`AI 응답 실패: ${err.message} · 내장 반응으로 대체했어요.`);
     }
   }
   const minWait = action === 'wait' ? 1700 : action === 'letter' ? 1500 : 950;
   await sleep(Math.max(0, minWait - (Date.now() - started)));
+  await applyTurn(action, text, extra, out, prevDoor);
+  setBusy(false);
+  if (!game.over && (action === 'free' || action === 'act')) $('directInput').focus();
+}
 
+async function applyTurn(action, text, extra, out, prevDoor) {
   const entry = commitTurn(game, action, text, extra, out);
   setBubble(entry.npcLine);
   setNarration(entry.narration || '');
@@ -365,25 +402,182 @@ async function play(action, text = '', extra = {}) {
   if (TIPS[entry.tag] && $('tip').innerHTML !== TIPS[entry.tag]) { $('tip').innerHTML = TIPS[entry.tag]; replay($('tip'), 'flash'); }
   renderStatus();
   renderHistory();
-
+  saveSession();
   if (game.over) await openDoor();
-  setBusy(false);
-  if (!game.over && (action === 'free' || action === 'act')) $('directInput').focus();
 }
 
-async function openDoor() {
-  const door = $('door');
-  await sleep(1100);
+/* ---------- OOC bar ---------- */
+function showOoc() {
+  const p = ui.pending;
+  $('oocTitle').textContent = p.title;
+  $('oocSub').textContent = `${p.sub} · ${p.prompt.length.toLocaleString()}자${p.prompt.length > INPUT_LIMIT ? ' (길어요)' : ''}`;
+  $('oocCopyLabel').textContent = 'OOC 복사';
+  $('oocCopy').classList.remove('done');
+  $('oocPaste').value = '';
+  $('oocErr').hidden = true;
+  $('oocSkip').hidden = p.kind !== 'result';
+  $('oocCancel').hidden = p.kind === 'result';
+  $('oocBar').hidden = false;
+  $('directForm').hidden = true;
+  $('app').classList.add('waiting');
+}
+function hideOoc() {
+  ui.pending = null;
+  $('oocBar').hidden = true;
+  $('directForm').hidden = false;
+  $('app').classList.remove('waiting');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+async function copyOoc() {
+  if (!ui.pending) return;
+  const ok = await copyText(ui.pending.prompt);
+  if (!ok) return openPrompt();
+  $('oocCopyLabel').textContent = '복사됨';
+  $('oocCopy').classList.add('done');
+  toast('OOC를 복사했어요. AI 채팅에 붙여넣어 보내세요.');
+  $('oocPaste').focus();
+}
+function openPrompt() {
+  if (!ui.pending) return;
+  $('promptTitle').textContent = ui.pending.title;
+  $('promptText').value = ui.pending.prompt;
+  $('promptCount').textContent = `${ui.pending.prompt.length.toLocaleString()}자`;
+  show('promptModal');
+  $('promptText').select();
+}
+
+function showOocError(errors) {
+  const el = $('oocErr');
+  el.innerHTML = `<b>답을 읽지 못했어요</b>${errors.map((e) => `<span>${esc(e).replace(/`([^`]+)`/g, '<code>$1</code>')}</span>`).join('')}<span>OOC를 다시 보내거나, 답의 형식 줄만 남겨 붙여넣어 보세요.</span>`;
+  el.hidden = false;
+  replay(el, 'shake');
+}
+
+async function applyOoc() {
+  const p = ui.pending;
+  const raw = $('oocPaste').value;
+  if (!p || !raw.trim()) return;
+  if (p.kind === 'turn') {
+    const res = parseTurn(raw, { door: game.door, hurt: game.hurt, trust: game.trust });
+    if (!res.ok) return showOocError(res.errors);
+    if (res.out.incident && !npc.incident) {
+      npc.incident = res.out.incident;
+      store.set('npc', npc);
+      toast(`다툰 이유 · ${res.out.incident}`);
+    }
+    hideOoc();
+    setBusy(true);
+    await applyTurn(p.action, p.text, p.extra, { ...res.out, tag: p.local.tag, cat: p.local.cat, sincere: p.local.sincere }, p.prevDoor);
+    setBusy(false);
+  } else {
+    const res = parseResult(raw);
+    if (!res.ok) return showOocError(res.errors);
+    hideOoc();
+    clearSession();
+    showResult(res.result);
+  }
+}
+
+function cancelOoc() {
+  const p = ui.pending;
+  if (!p || p.kind !== 'turn') return;
+  hideOoc();
+  const last = game.history[game.history.length - 1];
+  setBubble(last ? last.npcLine : (npc.personality === 'gentle' ? '...혼자 있고 싶어요.' : '...가.'));
+  setNarration(last ? last.narration : '쾅. 문이 닫혔다.');
+  if (p.action === 'gift') setCls($('giftOnMat'), 'gift');
+  saveSession();
+}
+
+/* ---------- session (survives switching to the chat tab) ---------- */
+function saveSession() {
+  if (!game) return;
+  const g = game;
+  store.set('session', {
+    v: 1, engine: ui.engine, npc,
+    game: { hurt: g.hurt, trust: g.trust, door: g.door, history: g.history, streak: g.streak, counts: g.counts, lastText: g.lastText, sincere: g.sincere, over: g.over },
+    pending: ui.pending ? { ...ui.pending, local: { tag: ui.pending.local?.tag, cat: ui.pending.local?.cat, sincere: ui.pending.local?.sincere } } : null,
+  });
+  syncResume();
+}
+function clearSession() { store.set('session', null); syncResume(); }
+function syncResume() {
+  const sess = store.get('session', null);
+  const box = $('resumeBox');
+  if (!box) return;
+  const ok = sess && sess.npc && sess.game && (sess.game.history.length || sess.pending);
+  box.hidden = !ok;
+  if (ok) $('resumeText').textContent = `${sess.npc.name}에게 하던 사과가 남아 있어요 · ${sess.game.history.length}턴${sess.pending ? ' · 답변 대기 중' : ''}`;
+}
+function resumeSession() {
+  const sess = store.get('session', null);
+  if (!sess) return;
+  npc = sess.npc;
+  ui.engine = sess.engine || ui.engine;
+  renderEngine();
+  hide('setup');
+  startGame();
+  Object.assign(game, sess.game, { used: new Set() });
+  renderStatus(false);
+  renderHistory();
+  const last = game.history[game.history.length - 1];
+  if (last) { setBubble(last.npcLine); setNarration(last.narration); }
+  if (game.over) { revealRoom(); setDoorOpen(); }
+  if (sess.pending) {
+    ui.pending = sess.pending;
+    if (ui.pending.kind === 'turn') { setBubble('', true); setNarration('AI 채팅에서 받은 답을 아래에 붙여넣어 주세요.'); }
+    showOoc();
+  } else if (game.over) {
+    beginResult();
+  }
+  saveSession();
+}
+
+function revealRoom() {
   if (ui.image) { $('roomImg').setAttribute('href', ui.image); svgShow($('roomImg'), true); }
   else svgShow($('roomPlaceholder'), true);
-  door.classList.add('turn');
-  await sleep(380);
+}
+function setDoorOpen() {
+  const door = $('door');
   door.classList.remove('ajar');
   door.classList.add('open');
   $('frame').classList.add('revealed');
   $('spill').classList.add('on');
   setCls($('lightGap'), 'light-gap l3');
   $('stage').dataset.tier = '4';
+}
+
+async function openDoor() {
+  const door = $('door');
+  await sleep(1100);
+  revealRoom();
+  door.classList.add('turn');
+  await sleep(380);
+  setDoorOpen();
+
+  if (usingOOC()) {
+    await sleep(1600);
+    beginResult();
+    return;
+  }
 
   let result = null;
   const started = Date.now();
@@ -394,6 +588,13 @@ async function openDoor() {
   if (!result) result = localResult(game);
   await sleep(Math.max(0, 2800 - (Date.now() - started)));
   showResult(result);
+}
+
+function beginResult() {
+  ui.pending = { kind: 'result', prompt: buildResultPrompt({ npc, history: game.history }), title: '결과 OOC', sub: `문이 열렸어요 · 총 ${game.history.length}회` };
+  setNarration('문이 열렸다. 결과 OOC로 그동안의 속마음을 받아 오세요.');
+  showOoc();
+  saveSession();
 }
 
 function showResult(r) {
@@ -410,6 +611,7 @@ function showResult(r) {
   $('resLast').textContent = `“${r.last_thought}”`;
   $('resMsg').textContent = `“${r.message_to_pc}”`;
   show('resultModal');
+  clearSession();
 }
 
 /* ---------- actions panel ---------- */
@@ -426,6 +628,7 @@ function buildActions() {
 
 function chooseAction(a) {
   if (ui.busy || !game || game.over) return;
+  if (ui.pending) return toast('먼저 지금 OOC의 답을 붙여넣거나 취소해 주세요.');
   if (a === 'knock' || a === 'wait') return play(a);
   if (a === 'letter') { closeSub(); show('letterModal'); $('letterText').focus(); return; }
   if (ui.sub === a) return closeSub();
@@ -507,19 +710,32 @@ function bind() {
     const v = e.target.querySelector('input').value.trim();
     if (v) play('gift', '', { gift: v });
   });
-  $('letterText').addEventListener('input', (e) => ($('letterCount').textContent = `${e.target.value.length} / 500`));
+  $('letterText').addEventListener('input', (e) => ($('letterCount').textContent = `${e.target.value.length} / 400`));
   $('letterForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const v = $('letterText').value.trim();
     if (!v) return;
     $('letterText').value = '';
-    $('letterCount').textContent = '0 / 500';
+    $('letterCount').textContent = '0 / 400';
     hide('letterModal');
     play('letter', v);
   });
   document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => (b.closest('.overlay').hidden = true)));
   document.querySelectorAll('.overlay:not(#setup):not(#resultModal)').forEach((o) => o.addEventListener('click', (e) => { if (e.target === o) o.hidden = true; }));
 
+  $('oocCopy').addEventListener('click', copyOoc);
+  $('oocView').addEventListener('click', openPrompt);
+  $('oocApply').addEventListener('click', applyOoc);
+  $('oocCancel').addEventListener('click', cancelOoc);
+  $('oocSkip').addEventListener('click', () => { hideOoc(); showResult(localResult(game)); });
+  $('oocPaste').addEventListener('paste', () => setTimeout(applyOoc, 30));
+  $('oocPaste').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); applyOoc(); } });
+  $('promptCopy').addEventListener('click', async () => {
+    const ok = await copyText($('promptText').value);
+    if (ok && ui.pending) { $('oocCopyLabel').textContent = '복사됨'; $('oocCopy').classList.add('done'); }
+    toast(ok ? 'OOC를 복사했어요.' : '복사가 막혀 있어요. 글을 전체 선택해 복사해 주세요.');
+    if (ok) hide('promptModal');
+  });
   $('btnLog').addEventListener('click', openLog);
   $('btnLog2').addEventListener('click', openLog);
   $('resLog').addEventListener('click', openLog);
@@ -527,17 +743,15 @@ function bind() {
   $('engineSeg').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b || b.disabled) return;
-    ui.engine = b.dataset.engine;
-    store.set('engine', ui.engine);
-    renderEngine();
+    setEngine(b.dataset.engine);
   });
   const rm = $('reduceMotion');
   rm.checked = store.get('reduceMotion', false);
   document.body.classList.toggle('reduce-motion', rm.checked);
   rm.addEventListener('change', () => { document.body.classList.toggle('reduce-motion', rm.checked); store.set('reduceMotion', rm.checked); });
   const closeAll = () => ['settingsModal', 'resultModal', 'logModal', 'letterModal'].forEach(hide);
-  const restart = () => { if (ui.busy || !npc) return; closeAll(); startGame(); };
-  const reset = () => { if (ui.busy) return; closeAll(); game = null; show('setup'); };
+  const restart = () => { if (ui.busy || !npc) return; closeAll(); hideOoc(); startGame(); };
+  const reset = () => { if (ui.busy) return; closeAll(); hideOoc(); clearSession(); game = null; show('setup'); };
   $('btnRestart').addEventListener('click', restart);
   $('btnRestartTop').addEventListener('click', restart);
   $('btnReset').addEventListener('click', reset);
